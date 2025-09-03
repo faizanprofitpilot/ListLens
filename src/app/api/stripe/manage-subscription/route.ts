@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabaseClient'
+import { authenticateRequest } from '@/lib/authMiddleware'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-12-18.acacia',
@@ -8,30 +9,32 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, action } = await request.json()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    // Authenticate user
+    const { user, error: authError } = await authenticateRequest(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
+    const { action } = await request.json()
+
     // Get user's Stripe customer ID
-    const { data: user, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('stripe_customer_id, email')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
-    if (userError || !user) {
+    if (userError || !userData) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (!user.stripe_customer_id) {
+    if (!userData.stripe_customer_id) {
       return NextResponse.json({ error: 'No subscription found' }, { status: 404 })
     }
 
     // Get customer's subscriptions
     const subscriptions = await stripe.subscriptions.list({
-      customer: user.stripe_customer_id,
+      customer: userData.stripe_customer_id,
       status: 'active',
     })
 
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
       case 'create_portal_session': {
         // Create Stripe Customer Portal session
         const portalSession = await stripe.billingPortal.sessions.create({
-          customer: user.stripe_customer_id,
+          customer: userData.stripe_customer_id,
           return_url: `${request.nextUrl.origin}/?portal=return`,
         })
 

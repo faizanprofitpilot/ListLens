@@ -104,7 +104,6 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id,
           action: 'create_portal_session'
         }),
       })

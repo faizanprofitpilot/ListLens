@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabaseClient'
+import { authenticateRequest } from '@/lib/authMiddleware'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-12-18.acacia',
@@ -8,14 +9,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, userEmail, plan = 'pro' } = await request.json()
-
-    if (!userId || !userEmail) {
-      return NextResponse.json(
-        { error: 'User ID and email are required' },
-        { status: 400 }
-      )
+    // Authenticate user
+    const { user, error: authError } = await authenticateRequest(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const { plan = 'pro' } = await request.json()
 
     // Validate plan type
     if (!['pro', 'turbo'].includes(plan)) {
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has an active subscription
-    const { data: user, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('is_pro, stripe_customer_id')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (userError) {
@@ -40,21 +40,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (user?.is_pro) {
+    if (userData?.is_pro) {
       return NextResponse.json(
         { error: 'User already has an active subscription' },
         { status: 400 }
       )
     }
 
-    let customerId = user?.stripe_customer_id
+    let customerId = userData?.stripe_customer_id
 
     // Create Stripe customer if doesn't exist
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: userEmail,
+        email: user.email!,
         metadata: {
-          userId: userId,
+          userId: user.id,
         },
       })
       customerId = customer.id
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('users')
         .update({ stripe_customer_id: customerId })
-        .eq('id', userId)
+        .eq('id', user.id)
     }
 
     // Get the correct price ID based on plan
