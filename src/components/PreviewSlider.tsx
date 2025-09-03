@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Share2, MessageCircle, Eye, X } from 'lucide-react'
+import { Download, MessageCircle, Eye, X } from 'lucide-react'
 import { useState } from 'react'
 
 interface PreviewSliderProps {

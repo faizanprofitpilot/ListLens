@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { User, LogOut, Settings, Image, CreditCard, Crown, BarChart3, Zap } from 'lucide-react'
+import { LogOut, Settings, Image, CreditCard, Crown, BarChart3, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { UsageService } from '@/lib/usageService'
 import { UserService } from '@/lib/userService'
@@ -19,10 +19,9 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
   const [isPro, setIsPro] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  if (!user) return null
-
   // Fetch user usage data
   useEffect(() => {
+    if (!user?.id) return
     const fetchUsage = async () => {
       if (!user?.id) return
       
@@ -46,7 +45,7 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
     }
 
     fetchUsage()
-  }, [user?.id])
+  }, [user?.id, user?.email])
 
   // Listen for usage updates from parent component
   useEffect(() => {
@@ -83,6 +82,8 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isOpen])
+
+  if (!user) return null
 
   const handleSignOut = async () => {
     try {

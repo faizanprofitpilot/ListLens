@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+// import { useState } from 'react'
 import { Home, Crown, Building } from 'lucide-react'
 
 export type StyleOption = 'airbnb' | 'luxury' | 'architectural'

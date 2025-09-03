@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Camera, Image, Upload, ArrowLeft, Check } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import NextImage from 'next/image'
@@ -160,7 +160,7 @@ export default function MobileUploadPage() {
             onClick={handleGallerySelect}
             className="bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl p-6 text-center hover:from-amber-200 hover:to-orange-200 transition-all cursor-pointer"
           >
-            <Image className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+            <Image className="w-8 h-8 text-amber-600 mx-auto mb-2" alt="Gallery icon" />
             <p className="text-sm font-medium text-stone-800">From Gallery</p>
             <p className="text-xs text-stone-500 mt-1">All devices</p>
           </button>
@@ -188,7 +188,7 @@ export default function MobileUploadPage() {
         {showCameraMessage && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-700">
-              📱 Camera access is only available on mobile devices. Please use "From Gallery" to select photos from your computer.
+              📱 Camera access is only available on mobile devices. Please use &quot;From Gallery&quot; to select photos from your computer.
             </p>
           </div>
         )}
@@ -211,7 +211,7 @@ export default function MobileUploadPage() {
                     onClick={() => removeFile(index)}
                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors cursor-pointer"
                   >
-                    ×
+                    &times;
                   </button>
                 </div>
               ))}

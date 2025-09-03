@@ -102,8 +102,8 @@ export class AIClient {
 
   async processImageWithPrompt(
     imageUrl: string, 
-    customPrompt: string,
-    _userId?: string
+    customPrompt: string
+    // _userId?: string
   ): Promise<ProcessingResult> {
     try {
       const startTime = Date.now()

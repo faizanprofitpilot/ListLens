@@ -56,9 +56,9 @@ export class UserService {
       console.error('Error getting user:', error)
       console.error('Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
-        code: (error as any)?.code,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint
+        code: (error as Record<string, unknown>)?.code,
+        details: (error as Record<string, unknown>)?.details,
+        hint: (error as Record<string, unknown>)?.hint
       })
       
       // Return a fallback user object
@@ -139,7 +139,7 @@ export class UserService {
   // Update user's Pro status
   static async updateProStatus(userId: string, isPro: boolean, stripeCustomerId?: string): Promise<User> {
     try {
-      const updateData: any = { is_pro: isPro }
+      const updateData: Record<string, unknown> = { is_pro: isPro }
       if (stripeCustomerId) {
         updateData.stripe_customer_id = stripeCustomerId
       }

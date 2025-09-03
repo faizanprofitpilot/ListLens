@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Smartphone, QrCode, Copy, Check } from 'lucide-react'
+import { X, Copy, Check } from 'lucide-react'
 import QRCode from 'qrcode'
 import Image from 'next/image'
 
@@ -87,7 +87,7 @@ export default function MobileUploadModal({ isOpen, onClose, onFilesReceived }: 
             )}
           </div>
           <p className="text-sm text-stone-600 mb-2">
-            Scan this QR code with your phone's camera
+            Scan this QR code with your phone&apos;s camera
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function MobileUploadModal({ isOpen, onClose, onFilesReceived }: 
             <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-xs font-semibold text-amber-600">1</span>
             </div>
-            <p>Open your phone's camera and scan the QR code</p>
+            <p>Open your phone&apos;s camera and scan the QR code</p>
           </div>
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">

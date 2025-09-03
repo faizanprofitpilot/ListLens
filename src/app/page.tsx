@@ -5,7 +5,7 @@ import Navigation from '@/components/Navigation'
 import Hero from '@/components/Hero'
 import UploadBox from '@/components/UploadBox'
 import StyleToggles, { StyleOption } from '@/components/StyleToggles'
-import PreviewSlider from '@/components/PreviewSlider'
+// import PreviewSlider from '@/components/PreviewSlider'
 import ChatFeedback from '@/components/ChatFeedback'
 import Pricing from '@/components/Pricing'
 import MobileUploadModal from '@/components/MobileUploadModal'
@@ -28,7 +28,7 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([])
   const [freeEditsRemaining, setFreeEditsRemaining] = useState(5)
-  const [upgradeRequired, setUpgradeRequired] = useState(false)
+  // const [upgradeRequired, setUpgradeRequired] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatTargetImage, setChatTargetImage] = useState<ProcessedImage | null>(null)
@@ -40,7 +40,7 @@ export default function Home() {
   const [customDescription, setCustomDescription] = useState('')
   const [isMobileUploadOpen, setIsMobileUploadOpen] = useState(false)
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
-  const [isUpgrading, setIsUpgrading] = useState(false)
+  // const [isUpgrading, setIsUpgrading] = useState(false)
 
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files)
@@ -271,7 +271,7 @@ export default function Home() {
     return () => {
       document.removeEventListener('keydown', handleKeyDownEvent)
     }
-  }, [previewImage, currentImageIndex, processedImages])
+  }, [previewImage, currentImageIndex, processedImages, handleKeyDown])
 
   // Listen for mobile upload completion
   useEffect(() => {
@@ -286,7 +286,7 @@ export default function Home() {
           
           if (data.success && data.session.files) {
             // Convert base64 data back to File objects
-            const files = data.session.files.map((fileData: any) => {
+            const files = data.session.files.map((fileData: { name: string; data: string; type: string }) => {
               const byteCharacters = atob(fileData.data)
               const byteNumbers = new Array(byteCharacters.length)
               for (let i = 0; i < byteCharacters.length; i++) {

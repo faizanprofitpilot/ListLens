@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, X, Sparkles, Bot } from 'lucide-react'
+import { Send, X, Bot } from 'lucide-react'
 
 interface ChatMessage {
   id: string
