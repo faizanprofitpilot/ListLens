@@ -40,7 +40,7 @@ export default function Home() {
   const [customDescription, setCustomDescription] = useState('')
   const [isMobileUploadOpen, setIsMobileUploadOpen] = useState(false)
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
-  // const [isUpgrading, setIsUpgrading] = useState(false)
+  const [isUpgrading, setIsUpgrading] = useState(false)
 
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files)

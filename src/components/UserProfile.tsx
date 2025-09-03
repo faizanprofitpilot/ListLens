@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, Settings, Image, CreditCard, Crown, BarChart3, Zap } from 'lucide-react'
+import { LogOut, CreditCard, Crown, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { UsageService } from '@/lib/usageService'
 import { UserService } from '@/lib/userService'
@@ -246,27 +246,19 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
 
           {/* Menu Items */}
           <div className="py-2">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"
-            >
-              <Image className="w-4 h-4" />
-              <span>My Photos</span>
-            </button>
-            
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Usage Stats</span>
-            </button>
-            
-            {!isPro && onUpgrade && (
+            {!isPro && (
               <button
                 onClick={() => {
                   setIsOpen(false)
-                  onUpgrade('pro')
+                  if (onUpgrade) {
+                    onUpgrade('pro')
+                  } else {
+                    // Fallback: redirect to pricing section
+                    const pricingSection = document.getElementById('pricing')
+                    if (pricingSection) {
+                      pricingSection.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer font-medium"
               >
@@ -284,14 +276,6 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
                 <span>Manage Subscription</span>
               </button>
             )}
-            
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Settings</span>
-            </button>
           </div>
 
           {/* Sign Out */}
