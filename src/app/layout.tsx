@@ -19,8 +19,11 @@ export const metadata: Metadata = {
   keywords: "real estate photography, AI photo editing, property photos, listing photos, HDR enhancement, sky replacement",
   authors: [{ name: "ListLens" }],
   icons: {
-    icon: "/Favicon.png",
-    shortcut: "/Favicon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/Favicon.png", type: "image/png" }
+    ],
+    shortcut: "/favicon.ico",
     apple: "/Favicon.png",
   },
   openGraph: {
@@ -43,6 +46,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/Favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/Favicon.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
