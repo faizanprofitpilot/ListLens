@@ -94,6 +94,36 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
     }
   }
 
+  const handleManageSubscription = async () => {
+    if (!user?.id) return
+
+    try {
+      const response = await fetch('/api/stripe/manage-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          action: 'create_portal_session'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.url) {
+        // Open Stripe Customer Portal
+        window.open(data.url, '_blank')
+        setIsOpen(false)
+      } else {
+        alert('Failed to open subscription management. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error managing subscription:', error)
+      alert('Failed to open subscription management. Please try again.')
+    }
+  }
+
   // Generate user initials for avatar fallback
   const getUserInitials = (name: string) => {
     return name
@@ -245,13 +275,15 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
               </button>
             )}
             
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"
-            >
-              <CreditCard className="w-4 h-4" />
-              <span>Manage Subscription</span>
-            </button>
+            {isPro && (
+              <button
+                onClick={handleManageSubscription}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Manage Subscription</span>
+              </button>
+            )}
             
             <button
               onClick={() => setIsOpen(false)}
