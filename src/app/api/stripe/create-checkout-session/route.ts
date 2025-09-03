@@ -10,13 +10,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate user
-    const { user, error: authError } = await authenticateRequest(request)
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
+    const { userId, userEmail, plan = 'pro' } = await request.json()
 
-    const { plan = 'pro' } = await request.json()
+    if (!userId || !userEmail) {
+      return NextResponse.json(
+        { error: 'User ID and email are required' },
+        { status: 400 }
+      )
+    }
 
     // Validate plan type
     if (!['pro', 'turbo'].includes(plan)) {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create user record using UserService (has fallback logic)
-    const userData = await UserService.getUser(user.id, user.email!)
+    const userData = await UserService.getUser(userId, userEmail)
 
     if (userData?.is_pro) {
       return NextResponse.json(
@@ -41,9 +42,9 @@ export async function POST(request: NextRequest) {
     // Create Stripe customer if doesn't exist
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: user.email!,
+        email: userEmail,
         metadata: {
-          userId: user.id,
+          userId: userId,
         },
       })
       customerId = customer.id
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('users')
         .update({ stripe_customer_id: customerId })
-        .eq('id', user.id)
+        .eq('id', userId)
     }
 
     // Get the correct price ID based on plan
@@ -84,10 +85,20 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ sessionId: session.id, url: session.url })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating checkout session:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      userId,
+      userEmail,
+      plan
+    })
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { 
+        error: 'Failed to create checkout session',
+        details: error.message 
+      },
       { status: 500 }
     )
   }
