@@ -9,11 +9,20 @@ export async function GET(request: NextRequest) {
         supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
         supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
         supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Missing',
+        nodeEnv: process.env.NODE_ENV,
       },
       request: {
         url: request.url,
         origin: request.nextUrl.origin,
         searchParams: Object.fromEntries(request.nextUrl.searchParams),
+        headers: {
+          host: request.headers.get('host'),
+          userAgent: request.headers.get('user-agent'),
+        }
+      },
+      oauth: {
+        expectedRedirectUrl: `${request.nextUrl.origin}/auth/callback`,
+        expectedSiteUrl: request.nextUrl.origin,
       }
     }
 
@@ -45,6 +54,28 @@ export async function GET(request: NextRequest) {
         connection: error ? 'Failed' : 'Success',
         error: error ? error.message : null,
         data: data ? 'Table accessible' : 'No data'
+      }
+
+      // Test OAuth URL generation
+      try {
+        const { data: oauthData, error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${request.nextUrl.origin}/auth/callback`,
+            skipBrowserRedirect: true
+          }
+        })
+        
+        debug.oauthTest = {
+          success: !oauthError,
+          error: oauthError ? oauthError.message : null,
+          url: oauthData?.url ? 'Generated successfully' : 'No URL generated'
+        }
+      } catch (oauthTestError: any) {
+        debug.oauthTest = {
+          success: false,
+          error: oauthTestError.message
+        }
       }
     } catch (supabaseError: any) {
       debug.supabase = {
