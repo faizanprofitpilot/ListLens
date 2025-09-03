@@ -68,8 +68,12 @@ export async function POST(request: NextRequest) {
 
     // Get the correct price ID based on plan
     const priceId = plan === 'pro' 
-      ? process.env.STRIPE_PRO_PRICE_ID || 'price_1S35MoChwewYxXGKaTcHdJL9' // Professional plan
-      : process.env.STRIPE_TURBO_PRICE_ID || 'price_1S35NAChwewYxXGK81qpJFut' // Turbo plan
+      ? process.env.STRIPE_PRO_PRICE_ID
+      : process.env.STRIPE_TURBO_PRICE_ID
+
+    if (!priceId) {
+      return NextResponse.json({ error: 'Pricing configuration error' }, { status: 500 })
+    }
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({

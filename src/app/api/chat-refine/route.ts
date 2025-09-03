@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIClient } from '@/lib/aiClient'
 import { UsageService } from '@/lib/usageService'
+import { authenticateRequest } from '@/lib/authMiddleware'
+import { sanitizePromptInput } from '@/lib/inputSanitizer'
+import { rateLimit } from '@/lib/rateLimiter'
 
 // Extract room context from filename
 function extractRoomContext(filename: string): string {
@@ -49,19 +52,34 @@ function getRoomContext(roomType: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const { user, error: authError } = await authenticateRequest(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    // Rate limiting
+    const rateLimitResult = rateLimit(user.id, 20, 60000) // 20 requests per minute for chat
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json({ 
+        error: 'Rate limit exceeded. Please try again later.',
+        retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
+      }, { status: 429 })
+    }
+
     const body = await request.json()
-    const { message, originalImage, processedImage, style, userId, conversationHistory, fileName } = body
+    const { message, originalImage, processedImage, style, conversationHistory, fileName } = body
 
     // Validate required fields
-    if (!message || !userId) {
+    if (!message) {
       return NextResponse.json(
-        { success: false, error: 'Message and userId are required' },
+        { success: false, error: 'Message is required' },
         { status: 400 }
       )
     }
 
     // Check if user has free edits remaining
-    const hasEditsRemaining = await UsageService.hasFreeEditsRemaining(userId)
+    const hasEditsRemaining = await UsageService.hasFreeEditsRemaining(user.id)
     if (!hasEditsRemaining) {
       return NextResponse.json(
         { 
@@ -83,11 +101,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Sanitize user message
+    const sanitizedMessage = sanitizePromptInput(message)
+    
     // Create a refined prompt based on the user's feedback
-    const refinedPrompt = createRefinedPrompt(message, style, conversationHistory, fileName)
+    const refinedPrompt = createRefinedPrompt(sanitizedMessage, style, conversationHistory, fileName)
 
     // Process the image with the refined prompt
-    const result = await aiClient.processImageWithPrompt(processedImage, refinedPrompt, userId)
+    const result = await aiClient.processImageWithPrompt(processedImage, refinedPrompt, user.id)
 
     if (!result.success) {
       return NextResponse.json(
@@ -97,12 +118,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage
-    await UsageService.incrementUsage(userId)
+    await UsageService.incrementUsage(user.id)
     
     // Save the processed image
     if (result.processedUrl) {
       await UsageService.saveProcessedImage(
-        userId,
+        user.id,
         originalImage || '',
         result.processedUrl,
         `refined-${style}`
@@ -110,11 +131,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated usage info
-    const usage = await UsageService.getUserUsage(userId)
+    const usage = await UsageService.getUserUsage(user.id)
     const freeEditsRemaining = Math.max(0, 20 - (usage?.free_edits_used || 0))
 
     // Generate a friendly AI response
-    const aiResponse = generateAIResponse(message, result.processingTime || '0s')
+    const aiResponse = generateAIResponse(sanitizedMessage, result.processingTime || '0s')
 
     return NextResponse.json({
       success: true,

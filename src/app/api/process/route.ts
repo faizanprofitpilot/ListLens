@@ -3,14 +3,30 @@ import { AIClient } from '@/lib/aiClient'
 import { UsageService } from '@/lib/usageService'
 import { UserService } from '@/lib/userService'
 import { StyleOption } from '@/components/StyleToggles'
+import { authenticateRequest } from '@/lib/authMiddleware'
+import { sanitizePromptInput, validateFileType, validateFileSize } from '@/lib/inputSanitizer'
+import { rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const { user, error: authError } = await authenticateRequest(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    // Rate limiting
+    const rateLimitResult = rateLimit(user.id, 10, 60000) // 10 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json({ 
+        error: 'Rate limit exceeded. Please try again later.',
+        retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
+      }, { status: 429 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const style = formData.get('style') as StyleOption
-    const userId = formData.get('userId') as string || 'anonymous'
-    const userEmail = formData.get('userEmail') as string || ''
     const customDescription = formData.get('customDescription') as string || ''
 
     // Validate inputs
@@ -22,23 +38,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid style provided' }, { status: 400 })
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
+    // Validate file type and size using security utilities
+    if (!validateFileType(file)) {
+      return NextResponse.json({ error: 'Invalid file type. Only JPEG, PNG, and WebP images are allowed.' }, { status: 400 })
     }
 
-    // Validate file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
+    if (!validateFileSize(file, 10)) {
       return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 })
     }
 
     // Ensure user exists in database
-    if (userId !== 'anonymous' && userEmail) {
-      await UserService.getUser(userId, userEmail)
-    }
+    await UserService.getUser(user.id, user.email!)
 
     // Check if user has free edits remaining
-    const hasFreeEdits = await UsageService.hasFreeEditsRemaining(userId)
+    const hasFreeEdits = await UsageService.hasFreeEditsRemaining(user.id)
     if (!hasFreeEdits) {
       return NextResponse.json({ 
         error: 'Free edit limit reached. Please upgrade to continue.',
@@ -54,9 +67,12 @@ export async function POST(request: NextRequest) {
       }, { status: 503 })
     }
 
+    // Sanitize custom description
+    const sanitizedDescription = sanitizePromptInput(customDescription)
+
     // Process image with AI
     const aiClient = new AIClient()
-    const result = await aiClient.processImage(file, style, userId, customDescription)
+    const result = await aiClient.processImage(file, style, user.id, sanitizedDescription)
 
     if (!result.success) {
       return NextResponse.json({ 
@@ -65,25 +81,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage count (only for non-Pro users)
-    if (userId !== 'anonymous') {
-      try {
-        await UserService.incrementUsage(userId)
-      } catch (error) {
-        console.error('Error incrementing usage:', error)
-        // Continue processing even if usage tracking fails
-      }
+    try {
+      await UserService.incrementUsage(user.id)
+    } catch (error) {
+      console.error('Error incrementing usage:', error)
+      // Continue processing even if usage tracking fails
     }
 
     // Save processed image record
     await UsageService.saveProcessedImage(
-      userId,
+      user.id,
       result.originalUrl!,
       result.processedUrl!,
       style
     )
 
     // Get updated usage info
-    const updatedUsage = await UsageService.getUserUsage(userId)
+    const updatedUsage = await UsageService.getUserUsage(user.id)
     const freeEditsRemaining = 20 - updatedUsage.free_edits_used
 
     return NextResponse.json({
