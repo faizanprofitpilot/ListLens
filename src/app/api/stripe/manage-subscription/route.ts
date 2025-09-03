@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabaseClient'
 import { authenticateRequest } from '@/lib/authMiddleware'
+import { UserService } from '@/lib/userService'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-12-18.acacia',
@@ -17,16 +18,8 @@ export async function POST(request: NextRequest) {
 
     const { action } = await request.json()
 
-    // Get user's Stripe customer ID
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('stripe_customer_id, email')
-      .eq('id', user.id)
-      .single()
-
-    if (userError || !userData) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+    // Get user data using UserService (has fallback logic)
+    const userData = await UserService.getUser(user.id, user.email!)
 
     if (!userData.stripe_customer_id) {
       return NextResponse.json({ error: 'No subscription found' }, { status: 404 })

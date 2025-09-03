@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabaseClient'
 import { authenticateRequest } from '@/lib/authMiddleware'
+import { UserService } from '@/lib/userService'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-12-18.acacia',
@@ -25,20 +26,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already has an active subscription
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('is_pro, stripe_customer_id')
-      .eq('id', user.id)
-      .single()
-
-    if (userError) {
-      console.error('Error fetching user:', userError)
-      return NextResponse.json(
-        { error: 'Failed to fetch user data' },
-        { status: 500 }
-      )
-    }
+    // Get or create user record using UserService (has fallback logic)
+    const userData = await UserService.getUser(user.id, user.email!)
 
     if (userData?.is_pro) {
       return NextResponse.json(
