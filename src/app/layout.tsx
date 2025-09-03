@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   keywords: "real estate photography, AI photo editing, property photos, listing photos, HDR enhancement, sky replacement",
   authors: [{ name: "ListLens" }],
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/Favicon.png",
+    shortcut: "/Favicon.png",
+    apple: "/Favicon.png",
   },
   openGraph: {
     title: "ListLens - AI Real Estate Photo Studio",

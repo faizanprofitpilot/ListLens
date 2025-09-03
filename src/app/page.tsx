@@ -380,7 +380,7 @@ export default function Home() {
                     {/* Image 2 */}
                     <div className="slideshow-slide">
                       <Image
-                        src="/mock2.png"
+                        src="/Mock2.png"
                         alt="AI Real Estate Photo Enhancement - Professional Staging"
                         width={1200}
                         height={900}
@@ -391,7 +391,7 @@ export default function Home() {
                     {/* Image 3 */}
                     <div className="slideshow-slide">
                       <Image
-                        src="/mock3.png"
+                        src="/Mock3.png"
                         alt="AI Real Estate Photo Enhancement - Luxury Interior"
                         width={1200}
                         height={900}
@@ -402,7 +402,7 @@ export default function Home() {
                     {/* Image 4 */}
                     <div className="slideshow-slide">
             <Image
-                        src="/mock4.png"
+                        src="/Mock4.png"
                         alt="AI Real Estate Photo Enhancement - Modern Living"
                         width={1200}
                         height={900}
