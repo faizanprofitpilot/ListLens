@@ -103,6 +103,7 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'create_portal_session'
         }),

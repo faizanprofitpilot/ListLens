@@ -103,6 +103,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           plan: plan,
         }),
@@ -213,14 +214,14 @@ export default function Home() {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('style', selectedStyle)
-        formData.append('userId', user?.id || 'anonymous')
-        formData.append('userEmail', user?.email || '')
+        // User data is now obtained from JWT token in the API
         if (customDescription.trim()) {
           formData.append('customDescription', customDescription.trim())
         }
 
         const response = await fetch('/api/process', {
           method: 'POST',
+          credentials: 'include',
           body: formData,
         })
 

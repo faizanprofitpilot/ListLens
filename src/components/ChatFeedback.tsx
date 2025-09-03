@@ -90,12 +90,12 @@ export default function ChatFeedback({
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           message: userMessage.content,
           originalImage,
           processedImage,
           style,
-          userId,
           fileName: fileName || 'image.jpg',
           conversationHistory: messages
         })
