@@ -80,15 +80,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage count (only for non-Pro users)
-    let updatedUser = currentUser
+    let freeEditsRemaining = 5
     if (!currentUser.is_pro) {
       try {
-        updatedUser = await UserService.incrementUsage(user.id)
-        console.log(`Usage incremented for user ${user.id}: ${currentUser.free_edits_used} -> ${updatedUser.free_edits_used}`)
+        const usageResponse = await fetch(`${request.nextUrl.origin}/api/increment-usage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id })
+        })
+        const usageData = await usageResponse.json()
+        freeEditsRemaining = usageData.free_edits_remaining || 5
+        console.log(`Usage incremented: ${currentUser.free_edits_used} -> ${usageData.free_edits_used}`)
       } catch (error) {
         console.error('Error incrementing usage:', error)
-        // Continue processing even if usage tracking fails
       }
+    } else {
+      freeEditsRemaining = -1 // Pro users have unlimited
     }
 
     // Save processed image record
@@ -98,9 +105,6 @@ export async function POST(request: NextRequest) {
       result.processedUrl!,
       style
     )
-
-    // Calculate remaining edits from the updated user data
-    const freeEditsRemaining = updatedUser.is_pro ? -1 : Math.max(0, 5 - updatedUser.free_edits_used)
 
     return NextResponse.json({
       success: true,
