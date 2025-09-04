@@ -49,22 +49,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Check usage limits before processing
-    const usageResponse = await fetch(`${request.nextUrl.origin}/api/simple-usage`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
-    })
-    
-    const usageData = await usageResponse.json()
-    
-    if (!usageResponse.ok) {
-      return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('free_edits_used, is_pro')
+      .eq('id', user.id)
+      .single()
+
+    if (userError) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
+
+    const used = userData.free_edits_used || 0
+    const isPro = userData.is_pro || false
+    const remaining = isPro ? 999 : Math.max(0, 5 - used)
     
     // Check if user has remaining edits
-    if (usageData.remaining <= 0) {
+    if (remaining <= 0) {
       return NextResponse.json({ 
-        error: `Usage limit reached. You have used ${usageData.used} of 5 free edits. Please upgrade to continue.`,
+        error: `Usage limit reached. You have used ${used} of 5 free edits. Please upgrade to continue.`,
         upgradeRequired: true 
       }, { status: 402 })
     }
@@ -90,19 +92,22 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Increment usage after successful processing
-    const incrementResponse = await fetch(`${request.nextUrl.origin}/api/simple-usage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
-    })
+    // Increment usage after successful processing (only for non-Pro users)
+    let finalUsage = { used, remaining, plan: isPro ? 'pro' : 'free' }
     
-    const incrementData = await incrementResponse.json()
-    
-    if (incrementResponse.ok) {
-      console.log(`Usage incremented: ${usageData.used} -> ${incrementData.used}, remaining: ${incrementData.remaining}`)
-    } else {
-      console.error('Usage increment failed:', incrementData.error)
+    if (!isPro) {
+      const newUsage = used + 1
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ free_edits_used: newUsage })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('Usage increment failed:', updateError)
+      } else {
+        console.log(`Usage incremented: ${used} -> ${newUsage}, remaining: ${5 - newUsage}`)
+        finalUsage = { used: newUsage, remaining: 5 - newUsage, plan: 'free' }
+      }
     }
 
     // Save processed image record
@@ -119,7 +124,7 @@ export async function POST(request: NextRequest) {
       processedUrl: result.processedUrl,
       style: result.style,
       processingTime: result.processingTime,
-      usage: incrementData
+      usage: finalUsage
     })
 
   } catch (error) {
