@@ -197,7 +197,7 @@ export default function PreviewSlider({
               <span className="font-semibold">No free edits remaining</span>
             ) : (
               <>
-                You have <span className="font-semibold">{freeEditsRemaining} of 20</span> free edits left
+                You have <span className="font-semibold">{freeEditsRemaining} of 5</span> free edits left
               </>
             )}
           </span>

@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     // Get updated usage info
     const usage = await UsageService.getUserUsage(user.id)
-    const freeEditsRemaining = Math.max(0, 20 - (usage?.free_edits_used || 0))
+    const freeEditsRemaining = Math.max(0, 5 - (usage?.free_edits_used || 0))
 
     // Generate a friendly AI response
     const aiResponse = generateAIResponse(sanitizedMessage, result.processingTime || '0s')

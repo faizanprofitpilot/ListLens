@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Get updated usage info
     const updatedUsage = await UsageService.getUserUsage(user.id)
-    const freeEditsRemaining = 20 - updatedUsage.free_edits_used
+    const freeEditsRemaining = 5 - updatedUsage.free_edits_used
 
     return NextResponse.json({
       success: true,

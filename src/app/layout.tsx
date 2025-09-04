@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ListLens - AI Real Estate Photo Studio",
-  description: "Transform your real estate photos with AI. Upload any property photo and get stunning, professional listing images with HDR lighting, sky replacement, and style filters. 20 free edits included.",
+  description: "Transform your real estate photos with AI. Upload any property photo and get stunning, professional listing images with HDR lighting, sky replacement, and style filters. 5 free edits included.",
   keywords: "real estate photography, AI photo editing, property photos, listing photos, HDR enhancement, sky replacement",
   authors: [{ name: "ListLens" }],
   icons: {
