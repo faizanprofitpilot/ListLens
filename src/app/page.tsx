@@ -13,6 +13,7 @@ import SignInModal from '@/components/SignInModal'
 import { Zap, Star, Users, Eye, Download, MessageCircle, X, ChevronLeft, ChevronRight, Smartphone, Upload } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUsage } from '@/hooks/useUsage'
 
 // Global type declaration for refresh function
 declare global {
@@ -30,12 +31,11 @@ interface ProcessedImage {
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
+  const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage()
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([])
-  const [freeEditsRemaining, setFreeEditsRemaining] = useState(5)
-  const [upgradeRequired, setUpgradeRequired] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatTargetImage, setChatTargetImage] = useState<ProcessedImage | null>(null)
@@ -92,9 +92,9 @@ export default function Home() {
     }
   }
 
-  const handleCreditUpdate = (remaining: number) => {
-    setFreeEditsRemaining(remaining)
-    setUpgradeRequired(remaining === 0)
+  const handleCreditUpdate = () => {
+    // Refetch usage data from server
+    refetchUsage()
     // Trigger profile refresh
     if (window.refreshUserProfile) {
       window.refreshUserProfile()
@@ -246,16 +246,11 @@ export default function Home() {
             fileName: file.name,
             style: selectedStyle
           })
-          setFreeEditsRemaining(result.freeEditsRemaining)
-          setUpgradeRequired(result.upgradeRequired)
-          // Refresh profile to update usage display
-          if (window.refreshUserProfile) {
-            window.refreshUserProfile()
-          }
+          // Refresh usage data after successful processing
+          handleCreditUpdate()
         } else {
           setError(result.error || `Failed to process ${file.name}`)
           if (result.upgradeRequired) {
-            setUpgradeRequired(true)
             break // Stop processing if upgrade required
           }
         }
@@ -762,23 +757,29 @@ export default function Home() {
                 )}
 
                 {/* Usage Counter */}
-                <div className="mt-8 text-center">
-                  <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full shadow-md ${
-                    freeEditsRemaining > 10 
-                      ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200' 
-                      : freeEditsRemaining > 5 
-                        ? 'bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border border-orange-200' 
-                        : 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200'
-                  }`}>
-                    <Zap className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      You have <span className="font-semibold">{freeEditsRemaining}</span> of 5 free edits left
-                    </span>
+                {usage && (
+                  <div className="mt-8 text-center">
+                    <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full shadow-md ${
+                      usage.remaining > 10 
+                        ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200' 
+                        : usage.remaining > 5 
+                          ? 'bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border border-orange-200' 
+                          : 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200'
+                    }`}>
+                      <Zap className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        {usage.plan === 'free' ? (
+                          <>You have <span className="font-semibold">{usage.remaining}</span> of {usage.quota} free edits left</>
+                        ) : (
+                          <>{usage.plan.toUpperCase()} Plan: <span className="font-semibold">{usage.remaining}</span> of {usage.quota} edits left</>
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-600 mt-2">
+                      💬 Click the chat button on any enhanced image to ask for refinements
+                    </p>
                   </div>
-                  <p className="text-xs text-stone-600 mt-2">
-                    💬 Click the chat button on any enhanced image to ask for refinements
-                  </p>
-                </div>
+                )}
 
                 <ChatFeedback
                   isOpen={isChatOpen}

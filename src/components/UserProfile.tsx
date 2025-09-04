@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { LogOut, CreditCard, Crown, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { UserService } from '@/lib/userService'
+import { useUsage } from '@/hooks/useUsage'
 
 interface UserProfileProps {
   onUsageUpdate?: () => void
@@ -12,95 +12,28 @@ interface UserProfileProps {
 
 export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfileProps = {}) {
   const { user, signOut } = useAuth()
+  const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage()
   const [isOpen, setIsOpen] = useState(false)
-  const [freeEditsRemaining, setFreeEditsRemaining] = useState<number | null>(null)
-  const [isLoadingUsage, setIsLoadingUsage] = useState(true)
-  const [isPro, setIsPro] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Expose refresh function globally
-  const refreshUsage = async () => {
-    if (!user?.id) return
-    
-    try {
-      const userData = await UserService.getUser(user.id, user.email || '')
-      setIsPro(userData.is_pro)
-      
-      if (userData.is_pro) {
-        setFreeEditsRemaining(-1) // -1 indicates unlimited
-      } else {
-        const remaining = Math.max(0, 5 - userData.free_edits_used) // 5 is the free limit
-        setFreeEditsRemaining(remaining)
-      }
-    } catch (error) {
-      console.error('Error refreshing usage:', error)
-    }
-  }
-
-  // Expose refresh function to window for global access
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      window.refreshUserProfile = refreshUsage
+      window.refreshUserProfile = refetchUsage
     }
     return () => {
       if (typeof window !== 'undefined') {
         delete window.refreshUserProfile
       }
     }
-  }, [user?.id, user?.email])
-
-  // Fetch user usage data
-  useEffect(() => {
-    if (!user?.id) return
-    const fetchUsage = async () => {
-      if (!user?.id) return
-      
-      try {
-        setIsLoadingUsage(true)
-        const userData = await UserService.getUser(user.id, user.email || '')
-        setIsPro(userData.is_pro)
-        
-        if (userData.is_pro) {
-          setFreeEditsRemaining(-1) // -1 indicates unlimited
-        } else {
-          const remaining = Math.max(0, 5 - userData.free_edits_used) // 5 is the free limit
-          setFreeEditsRemaining(remaining)
-        }
-      } catch (error) {
-        console.error('Error fetching usage:', error)
-        setFreeEditsRemaining(5) // Fallback to full limit
-      } finally {
-        setIsLoadingUsage(false)
-      }
-    }
-
-    fetchUsage()
-  }, [user?.id, user?.email])
+  }, [refetchUsage])
 
   // Listen for usage updates from parent component
   useEffect(() => {
     if (onUsageUpdate) {
-      const fetchUsage = async () => {
-        if (!user?.id) return
-        
-        try {
-          const userData = await UserService.getUser(user.id, user.email || '')
-          setIsPro(userData.is_pro)
-          
-          if (userData.is_pro) {
-            setFreeEditsRemaining(-1) // -1 indicates unlimited
-          } else {
-            const remaining = Math.max(0, 5 - userData.free_edits_used)
-            setFreeEditsRemaining(remaining)
-          }
-        } catch (error) {
-          console.error('Error fetching usage:', error)
-        }
-      }
-      
-      fetchUsage()
+      refetchUsage()
     }
-  }, [onUsageUpdate, user?.id, user?.email])
+  }, [onUsageUpdate, refetchUsage])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -206,20 +139,20 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
           <span className="text-sm font-medium">
             {displayName}
           </span>
-          {!isLoadingUsage && freeEditsRemaining !== null && (
+          {!usageLoading && usage && (
             <div className="flex items-center gap-1 mt-0.5">
-              {isPro ? (
+              {usage.plan !== 'free' ? (
                 <>
                   <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                   <span className="text-xs text-amber-600 font-medium">
-                    Pro - Unlimited
+                    {usage.plan.toUpperCase()} - {usage.remaining} left
                   </span>
                 </>
               ) : (
                 <>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-xs text-stone-500">
-                    {freeEditsRemaining} edits left
+                    {usage.remaining} edits left
                   </span>
                 </>
               )}
@@ -265,13 +198,13 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
                 <div className="flex items-center gap-2 mt-1">
                   <Crown className="w-3 h-3 text-amber-500" />
                   <span className="text-xs text-amber-600 font-medium">
-                    {isPro ? 'Pro Plan' : 'Free Plan'}
+                    {usage?.plan ? `${usage.plan.toUpperCase()} Plan` : 'Free Plan'}
                   </span>
-                  {!isLoadingUsage && freeEditsRemaining !== null && !isPro && (
+                  {!usageLoading && usage && usage.plan === 'free' && (
                     <>
                       <span className="text-xs text-stone-400">•</span>
                       <span className="text-xs text-stone-600">
-                        {freeEditsRemaining} edits left
+                        {usage.remaining} edits left
                       </span>
                     </>
                   )}
@@ -282,7 +215,7 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
 
           {/* Menu Items */}
           <div className="py-2">
-            {!isPro && (
+            {usage?.plan === 'free' && (
               <button
                 onClick={() => {
                   setIsOpen(false)
@@ -303,7 +236,7 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
               </button>
             )}
             
-            {isPro && (
+            {usage?.plan && usage.plan !== 'free' && (
               <button
                 onClick={handleManageSubscription}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"

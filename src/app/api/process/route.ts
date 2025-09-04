@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIClient } from '@/lib/aiClient'
 import { UsageService } from '@/lib/usageService'
-import { UserService } from '@/lib/userService'
 import { StyleOption } from '@/components/StyleToggles'
 import { authenticateRequest } from '@/lib/authMiddleware'
 import { sanitizePromptInput, validateFileType, validateFileSize } from '@/lib/inputSanitizer'
 import { rateLimit } from '@/lib/rateLimiter'
+import { supabaseService } from '@/lib/supabaseService'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,13 +48,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 })
     }
 
-    // Ensure user exists in database and check usage limits
-    const currentUser = await UserService.getUser(user.id, user.email!)
+    // Check usage limits before processing
+    const { data: usageData, error: usageError } = await supabaseService.rpc('get_usage_summary', { 
+      _user_id: user.id 
+    })
     
-    // Check if user has free edits remaining (Pro users have unlimited)
-    if (!currentUser.is_pro && currentUser.free_edits_used >= 5) {
+    if (usageError) {
+      return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
+    }
+    
+    const usage = usageData?.[0]
+    if (!usage) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+    
+    // Check if user has remaining edits
+    if (usage.remaining <= 0) {
       return NextResponse.json({ 
-        error: 'Free edit limit reached. Please upgrade to continue.',
+        error: `Usage limit reached for ${usage.plan} plan (${usage.quota} edits per month). Please upgrade to continue.`,
         upgradeRequired: true 
       }, { status: 402 })
     }
@@ -79,23 +91,24 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Increment usage count (only for non-Pro users)
-    let freeEditsRemaining = 5
-    if (!currentUser.is_pro) {
-      try {
-        const usageResponse = await fetch(`${request.nextUrl.origin}/api/increment-usage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id })
-        })
-        const usageData = await usageResponse.json()
-        freeEditsRemaining = usageData.free_edits_remaining || 5
-        console.log(`Usage incremented: ${currentUser.free_edits_used} -> ${usageData.free_edits_used}`)
-      } catch (error) {
-        console.error('Error incrementing usage:', error)
-      }
+    // Generate stable job ID for idempotency
+    const jobId = crypto.createHash('sha256')
+      .update(`${user.id}:${file.name}:${Date.now()}`)
+      .digest('hex')
+      .slice(0, 32)
+
+    // Atomically increment usage after successful processing
+    const { data: updatedUsage, error: incrementError } = await supabaseService.rpc('increment_usage', {
+      _user_id: user.id,
+      _job_id: jobId,
+      _delta: 1
+    })
+
+    if (incrementError) {
+      console.error('Usage increment failed:', incrementError)
+      // Continue processing even if usage tracking fails
     } else {
-      freeEditsRemaining = -1 // Pro users have unlimited
+      console.log(`Usage incremented: ${usage.used} -> ${updatedUsage?.[0]?.used}, remaining: ${updatedUsage?.[0]?.remaining}`)
     }
 
     // Save processed image record
@@ -106,14 +119,21 @@ export async function POST(request: NextRequest) {
       style
     )
 
+    // Get final usage state
+    const finalUsage = updatedUsage?.[0] || usage
+
     return NextResponse.json({
       success: true,
       originalUrl: result.originalUrl,
       processedUrl: result.processedUrl,
       style: result.style,
       processingTime: result.processingTime,
-      freeEditsRemaining: freeEditsRemaining,
-      upgradeRequired: freeEditsRemaining === 0
+      usage: {
+        used: finalUsage.used,
+        quota: finalUsage.quota,
+        remaining: finalUsage.remaining,
+        plan: finalUsage.plan
+      }
     })
 
   } catch (error) {
