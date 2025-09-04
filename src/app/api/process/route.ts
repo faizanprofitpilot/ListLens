@@ -49,23 +49,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Check usage limits before processing
-    const { data: usageData, error: usageError } = await supabaseService.rpc('get_usage_summary', { 
-      _user_id: user.id 
+    const usageResponse = await fetch(`${request.nextUrl.origin}/api/simple-usage`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
     })
     
-    if (usageError) {
+    const usageData = await usageResponse.json()
+    
+    if (!usageResponse.ok) {
       return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
     }
     
-    const usage = usageData?.[0]
-    if (!usage) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-    
     // Check if user has remaining edits
-    if (usage.remaining <= 0) {
+    if (usageData.remaining <= 0) {
       return NextResponse.json({ 
-        error: `Usage limit reached for ${usage.plan} plan (${usage.quota} edits per month). Please upgrade to continue.`,
+        error: `Usage limit reached. You have used ${usageData.used} of 5 free edits. Please upgrade to continue.`,
         upgradeRequired: true 
       }, { status: 402 })
     }
@@ -91,24 +90,19 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Generate stable job ID for idempotency
-    const jobId = crypto.createHash('sha256')
-      .update(`${user.id}:${file.name}:${Date.now()}`)
-      .digest('hex')
-      .slice(0, 32)
-
-    // Atomically increment usage after successful processing
-    const { data: updatedUsage, error: incrementError } = await supabaseService.rpc('increment_usage', {
-      _user_id: user.id,
-      _job_id: jobId,
-      _delta: 1
+    // Increment usage after successful processing
+    const incrementResponse = await fetch(`${request.nextUrl.origin}/api/simple-usage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
     })
-
-    if (incrementError) {
-      console.error('Usage increment failed:', incrementError)
-      // Continue processing even if usage tracking fails
+    
+    const incrementData = await incrementResponse.json()
+    
+    if (incrementResponse.ok) {
+      console.log(`Usage incremented: ${usageData.used} -> ${incrementData.used}, remaining: ${incrementData.remaining}`)
     } else {
-      console.log(`Usage incremented: ${usage.used} -> ${updatedUsage?.[0]?.used}, remaining: ${updatedUsage?.[0]?.remaining}`)
+      console.error('Usage increment failed:', incrementData.error)
     }
 
     // Save processed image record
@@ -119,21 +113,13 @@ export async function POST(request: NextRequest) {
       style
     )
 
-    // Get final usage state
-    const finalUsage = updatedUsage?.[0] || usage
-
     return NextResponse.json({
       success: true,
       originalUrl: result.originalUrl,
       processedUrl: result.processedUrl,
       style: result.style,
       processingTime: result.processingTime,
-      usage: {
-        used: finalUsage.used,
-        quota: finalUsage.quota,
-        remaining: finalUsage.remaining,
-        plan: finalUsage.plan
-      }
+      usage: incrementData
     })
 
   } catch (error) {

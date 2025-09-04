@@ -16,7 +16,7 @@ export function useUsage() {
   const fetchUsage = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/usage', { credentials: 'include' })
+      const response = await fetch('/api/simple-usage', { credentials: 'include' })
       const data = await response.json()
       
       if (response.ok) {
