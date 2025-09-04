@@ -79,9 +79,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user has free edits remaining
-    const hasEditsRemaining = await UsageService.hasFreeEditsRemaining(user.id)
-    if (!hasEditsRemaining) {
+    // Get current user and check usage limits
+    const currentUser = await UserService.getUser(user.id, user.email!)
+    
+    // Check if user has free edits remaining (Pro users have unlimited)
+    if (!currentUser.is_pro && currentUser.free_edits_used >= 5) {
       return NextResponse.json(
         { 
           success: false, 
@@ -118,14 +120,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Increment usage
-    let updatedUser
-    try {
-      updatedUser = await UserService.incrementUsage(user.id)
-    } catch (error) {
-      console.error('Error incrementing usage:', error)
-      // Get current user data as fallback
-      updatedUser = await UserService.getUser(user.id, user.email!)
+    // Increment usage (only for non-Pro users)
+    let updatedUser = currentUser
+    if (!currentUser.is_pro) {
+      try {
+        updatedUser = await UserService.incrementUsage(user.id)
+        console.log(`Usage incremented for user ${user.id}: ${currentUser.free_edits_used} -> ${updatedUser.free_edits_used}`)
+      } catch (error) {
+        console.error('Error incrementing usage:', error)
+        // Continue processing even if usage tracking fails
+      }
     }
     
     // Save the processed image
@@ -139,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate remaining edits from the updated user data
-    const freeEditsRemaining = Math.max(0, 5 - updatedUser.free_edits_used)
+    const freeEditsRemaining = updatedUser.is_pro ? -1 : Math.max(0, 5 - updatedUser.free_edits_used)
 
     // Generate a friendly AI response
     const aiResponse = generateAIResponse(sanitizedMessage, result.processingTime || '0s')

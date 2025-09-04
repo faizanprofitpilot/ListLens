@@ -47,12 +47,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 })
     }
 
-    // Ensure user exists in database
-    await UserService.getUser(user.id, user.email!)
-
-    // Check if user has free edits remaining
-    const hasFreeEdits = await UsageService.hasFreeEditsRemaining(user.id)
-    if (!hasFreeEdits) {
+    // Ensure user exists in database and check usage limits
+    const currentUser = await UserService.getUser(user.id, user.email!)
+    
+    // Check if user has free edits remaining (Pro users have unlimited)
+    if (!currentUser.is_pro && currentUser.free_edits_used >= 5) {
       return NextResponse.json({ 
         error: 'Free edit limit reached. Please upgrade to continue.',
         upgradeRequired: true 
@@ -81,14 +80,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage count (only for non-Pro users)
-    let updatedUser
-    try {
-      updatedUser = await UserService.incrementUsage(user.id)
-    } catch (error) {
-      console.error('Error incrementing usage:', error)
-      // Continue processing even if usage tracking fails
-      // Get current user data as fallback
-      updatedUser = await UserService.getUser(user.id, user.email!)
+    let updatedUser = currentUser
+    if (!currentUser.is_pro) {
+      try {
+        updatedUser = await UserService.incrementUsage(user.id)
+        console.log(`Usage incremented for user ${user.id}: ${currentUser.free_edits_used} -> ${updatedUser.free_edits_used}`)
+      } catch (error) {
+        console.error('Error incrementing usage:', error)
+        // Continue processing even if usage tracking fails
+      }
     }
 
     // Save processed image record
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Calculate remaining edits from the updated user data
-    const freeEditsRemaining = Math.max(0, 5 - updatedUser.free_edits_used)
+    const freeEditsRemaining = updatedUser.is_pro ? -1 : Math.max(0, 5 - updatedUser.free_edits_used)
 
     return NextResponse.json({
       success: true,

@@ -11,10 +11,10 @@ export interface User {
 }
 
 export class UserService {
-  // Get or create user record
+  // Get or create user record from users table only
   static async getUser(userId: string, email: string): Promise<User> {
     try {
-      // Try to get existing user from users table first
+      // Get existing user from users table
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
         .select('*')
@@ -22,11 +22,7 @@ export class UserService {
         .single()
 
       if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
-        // If users table doesn't exist, fall back to user_usage table
-        if (fetchError.code === 'PGRST205') {
-          console.log('Users table not found, falling back to user_usage table')
-          return await this.getUserFromUsageTable(userId, email)
-        }
+        console.error('Error fetching user:', fetchError)
         throw fetchError
       }
 
@@ -47,8 +43,8 @@ export class UserService {
         .single()
 
       if (createError) {
-        // Fall back to user_usage table if users table insert fails
-        return await this.getUserFromUsageTable(userId, email)
+        console.error('Error creating user:', createError)
+        throw createError
       }
 
       return newUser
@@ -73,68 +69,6 @@ export class UserService {
     }
   }
 
-  // Fallback method to use user_usage table when users table doesn't exist
-  static async getUserFromUsageTable(userId: string, email: string): Promise<User> {
-    try {
-      // Try to get existing user from user_usage table
-      const { data: existingUsage, error: fetchError } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
-        throw fetchError
-      }
-
-      if (existingUsage) {
-        // Convert user_usage record to User format
-        return {
-          id: userId,
-          email: email,
-          is_pro: false, // Default to false since user_usage doesn't have is_pro
-          free_edits_used: existingUsage.free_edits_used || 0,
-          created_at: existingUsage.created_at,
-          updated_at: existingUsage.updated_at
-        }
-      }
-
-      // Create new user_usage record if none exists
-      const { data: newUsage, error: createError } = await supabase
-        .from('user_usage')
-        .insert({
-          user_id: userId,
-          free_edits_used: 0
-        })
-        .select()
-        .single()
-
-      if (createError) {
-        throw createError
-      }
-
-      // Convert to User format
-      return {
-        id: userId,
-        email: email,
-        is_pro: false,
-        free_edits_used: newUsage.free_edits_used,
-        created_at: newUsage.created_at,
-        updated_at: newUsage.updated_at
-      }
-    } catch (error) {
-      console.error('Error getting user from usage table:', error)
-      // Return fallback user object
-      return {
-        id: userId,
-        email: email,
-        is_pro: false,
-        free_edits_used: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    }
-  }
 
   // Update user's Pro status
   static async updateProStatus(userId: string, isPro: boolean, stripeCustomerId?: string): Promise<User> {
@@ -162,13 +96,14 @@ export class UserService {
     }
   }
 
-  // Increment usage count
+  // Increment usage count in users table only
   static async incrementUsage(userId: string): Promise<User> {
     try {
-      const currentUser = await this.getUser(userId, '') // We'll get the user first
+      // Get current user data
+      const currentUser = await this.getUser(userId, '')
       
-      // Try to update users table first
-      const { data: updatedUser, error: usersError } = await supabase
+      // Update users table with incremented usage
+      const { data: updatedUser, error } = await supabase
         .from('users')
         .update({
           free_edits_used: currentUser.free_edits_used + 1,
@@ -178,32 +113,9 @@ export class UserService {
         .select()
         .single()
 
-      if (usersError) {
-        // If users table update fails, try user_usage table
-        console.log('Users table update failed, trying user_usage table')
-        const { data: updatedUsage, error: usageError } = await supabase
-          .from('user_usage')
-          .update({
-            free_edits_used: currentUser.free_edits_used + 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId)
-          .select()
-          .single()
-
-        if (usageError) {
-          throw usageError
-        }
-
-        // Convert back to User format
-        return {
-          id: userId,
-          email: currentUser.email,
-          is_pro: currentUser.is_pro,
-          free_edits_used: updatedUsage.free_edits_used,
-          created_at: currentUser.created_at,
-          updated_at: updatedUsage.updated_at
-        }
+      if (error) {
+        console.error('Error updating usage in users table:', error)
+        throw error
       }
 
       return updatedUser
