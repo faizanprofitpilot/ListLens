@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIClient } from '@/lib/aiClient'
 import { UsageService } from '@/lib/usageService'
+import { UserService } from '@/lib/userService'
 import { authenticateRequest } from '@/lib/authMiddleware'
 import { sanitizePromptInput } from '@/lib/inputSanitizer'
 import { rateLimit } from '@/lib/rateLimiter'
@@ -118,7 +119,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage
-    await UsageService.incrementUsage(user.id)
+    let updatedUser
+    try {
+      updatedUser = await UserService.incrementUsage(user.id)
+    } catch (error) {
+      console.error('Error incrementing usage:', error)
+      // Get current user data as fallback
+      updatedUser = await UserService.getUser(user.id, user.email!)
+    }
     
     // Save the processed image
     if (result.processedUrl) {
@@ -130,9 +138,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get updated usage info
-    const usage = await UsageService.getUserUsage(user.id)
-    const freeEditsRemaining = Math.max(0, 5 - (usage?.free_edits_used || 0))
+    // Calculate remaining edits from the updated user data
+    const freeEditsRemaining = Math.max(0, 5 - updatedUser.free_edits_used)
 
     // Generate a friendly AI response
     const aiResponse = generateAIResponse(sanitizedMessage, result.processingTime || '0s')

@@ -167,7 +167,8 @@ export class UserService {
     try {
       const currentUser = await this.getUser(userId, '') // We'll get the user first
       
-      const { data: updatedUser, error } = await supabase
+      // Try to update users table first
+      const { data: updatedUser, error: usersError } = await supabase
         .from('users')
         .update({
           free_edits_used: currentUser.free_edits_used + 1,
@@ -177,8 +178,32 @@ export class UserService {
         .select()
         .single()
 
-      if (error) {
-        throw error
+      if (usersError) {
+        // If users table update fails, try user_usage table
+        console.log('Users table update failed, trying user_usage table')
+        const { data: updatedUsage, error: usageError } = await supabase
+          .from('user_usage')
+          .update({
+            free_edits_used: currentUser.free_edits_used + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .select()
+          .single()
+
+        if (usageError) {
+          throw usageError
+        }
+
+        // Convert back to User format
+        return {
+          id: userId,
+          email: currentUser.email,
+          is_pro: currentUser.is_pro,
+          free_edits_used: updatedUsage.free_edits_used,
+          created_at: currentUser.created_at,
+          updated_at: updatedUsage.updated_at
+        }
       }
 
       return updatedUser

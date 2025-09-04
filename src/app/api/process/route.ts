@@ -81,11 +81,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage count (only for non-Pro users)
+    let updatedUser
     try {
-      await UserService.incrementUsage(user.id)
+      updatedUser = await UserService.incrementUsage(user.id)
     } catch (error) {
       console.error('Error incrementing usage:', error)
       // Continue processing even if usage tracking fails
+      // Get current user data as fallback
+      updatedUser = await UserService.getUser(user.id, user.email!)
     }
 
     // Save processed image record
@@ -96,9 +99,8 @@ export async function POST(request: NextRequest) {
       style
     )
 
-    // Get updated usage info
-    const updatedUsage = await UsageService.getUserUsage(user.id)
-    const freeEditsRemaining = 5 - updatedUsage.free_edits_used
+    // Calculate remaining edits from the updated user data
+    const freeEditsRemaining = Math.max(0, 5 - updatedUser.free_edits_used)
 
     return NextResponse.json({
       success: true,
