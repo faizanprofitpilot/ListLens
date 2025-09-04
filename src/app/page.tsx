@@ -28,7 +28,7 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([])
   const [freeEditsRemaining, setFreeEditsRemaining] = useState(5)
-  // const [upgradeRequired, setUpgradeRequired] = useState(false)
+  const [upgradeRequired, setUpgradeRequired] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatTargetImage, setChatTargetImage] = useState<ProcessedImage | null>(null)
