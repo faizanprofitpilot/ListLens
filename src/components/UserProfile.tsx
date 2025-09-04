@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { LogOut, CreditCard, Crown, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { UsageService } from '@/lib/usageService'
 import { UserService } from '@/lib/userService'
 
 interface UserProfileProps {
@@ -85,9 +84,15 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
         if (!user?.id) return
         
         try {
-          const usage = await UsageService.getUserUsage(user.id)
-          const remaining = Math.max(0, 5 - usage.free_edits_used)
-          setFreeEditsRemaining(remaining)
+          const userData = await UserService.getUser(user.id, user.email || '')
+          setIsPro(userData.is_pro)
+          
+          if (userData.is_pro) {
+            setFreeEditsRemaining(-1) // -1 indicates unlimited
+          } else {
+            const remaining = Math.max(0, 5 - userData.free_edits_used)
+            setFreeEditsRemaining(remaining)
+          }
         } catch (error) {
           console.error('Error fetching usage:', error)
         }
@@ -95,7 +100,7 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
       
       fetchUsage()
     }
-  }, [onUsageUpdate, user?.id])
+  }, [onUsageUpdate, user?.id, user?.email])
 
   // Close dropdown when clicking outside
   useEffect(() => {
