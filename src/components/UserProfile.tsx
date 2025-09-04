@@ -19,6 +19,37 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
   const [isPro, setIsPro] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // Expose refresh function globally
+  const refreshUsage = async () => {
+    if (!user?.id) return
+    
+    try {
+      const userData = await UserService.getUser(user.id, user.email || '')
+      setIsPro(userData.is_pro)
+      
+      if (userData.is_pro) {
+        setFreeEditsRemaining(-1) // -1 indicates unlimited
+      } else {
+        const remaining = Math.max(0, 5 - userData.free_edits_used) // 5 is the free limit
+        setFreeEditsRemaining(remaining)
+      }
+    } catch (error) {
+      console.error('Error refreshing usage:', error)
+    }
+  }
+
+  // Expose refresh function to window for global access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.refreshUserProfile = refreshUsage
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete window.refreshUserProfile
+      }
+    }
+  }, [user?.id, user?.email])
+
   // Fetch user usage data
   useEffect(() => {
     if (!user?.id) return

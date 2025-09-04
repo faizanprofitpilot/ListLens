@@ -14,6 +14,13 @@ import { Zap, Star, Users, Eye, Download, MessageCircle, X, ChevronLeft, Chevron
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 
+// Global type declaration for refresh function
+declare global {
+  interface Window {
+    refreshUserProfile?: () => void
+  }
+}
+
 interface ProcessedImage {
   originalUrl: string
   processedUrl: string
@@ -88,6 +95,10 @@ export default function Home() {
   const handleCreditUpdate = (remaining: number) => {
     setFreeEditsRemaining(remaining)
     setUpgradeRequired(remaining === 0)
+    // Trigger profile refresh
+    if (window.refreshUserProfile) {
+      window.refreshUserProfile()
+    }
   }
 
   const handleUpgrade = async (plan: 'pro' | 'turbo' = 'pro') => {
@@ -237,6 +248,10 @@ export default function Home() {
           })
           setFreeEditsRemaining(result.freeEditsRemaining)
           setUpgradeRequired(result.upgradeRequired)
+          // Refresh profile to update usage display
+          if (window.refreshUserProfile) {
+            window.refreshUserProfile()
+          }
         } else {
           setError(result.error || `Failed to process ${file.name}`)
           if (result.upgradeRequired) {
@@ -757,7 +772,7 @@ export default function Home() {
                   }`}>
                     <Zap className="w-4 h-4" />
                     <span className="text-sm font-medium">
-                      You have <span className="font-semibold">{freeEditsRemaining} of 5</span> free edits left
+                      You have <span className="font-semibold">{freeEditsRemaining}</span> of 5 free edits left
                     </span>
                   </div>
                   <p className="text-xs text-stone-600 mt-2">
