@@ -145,7 +145,7 @@ export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfilePro
                 <>
                   <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                   <span className="text-xs text-amber-600 font-medium">
-                    {usage.plan.toUpperCase()} - {usage.remaining} left
+                    {usage.plan?.toUpperCase() || 'PRO'} - {usage.remaining} left
                   </span>
                 </>
               ) : (

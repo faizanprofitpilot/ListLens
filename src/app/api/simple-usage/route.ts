@@ -28,7 +28,8 @@ export async function GET() {
     used,
     remaining,
     isPro,
-    quota: isPro ? 999 : 5
+    quota: isPro ? 999 : 5,
+    plan: isPro ? 'pro' : 'free'
   })
 }
 
@@ -71,6 +72,7 @@ export async function POST() {
   return NextResponse.json({
     success: true,
     used: newUsage,
-    remaining: Math.max(0, 5 - newUsage)
+    remaining: Math.max(0, 5 - newUsage),
+    plan: 'free'
   })
 }
