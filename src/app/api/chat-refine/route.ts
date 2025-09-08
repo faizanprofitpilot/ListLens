@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     const refinedPrompt = createRefinedPrompt(sanitizedMessage, style, conversationHistory, fileName)
 
     // Process the image with the refined prompt
-    const result = await aiClient.processImageWithPrompt(processedImage, refinedPrompt, user.id)
+    const result = await aiClient.processImageWithPrompt(processedImage, refinedPrompt)
 
     if (!result.success) {
       return NextResponse.json(
