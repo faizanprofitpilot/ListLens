@@ -9,8 +9,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 export async function POST(request: NextRequest) {
+  let userId: string | undefined
+  let userEmail: string | undefined
+  let plan: string = 'pro'
+  
   try {
-    const { userId, userEmail, plan = 'pro' } = await request.json()
+    const requestData = await request.json()
+    userId = requestData.userId
+    userEmail = requestData.userEmail
+    plan = requestData.plan || 'pro'
 
     if (!userId || !userEmail) {
       return NextResponse.json(
