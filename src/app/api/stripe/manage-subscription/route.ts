@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { supabase } from '@/lib/supabaseClient'
+// import { supabase } from '@/lib/supabaseClient'
 import { authenticateRequest } from '@/lib/authMiddleware'
 import { UserService } from '@/lib/userService'
 

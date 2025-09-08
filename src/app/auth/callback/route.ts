@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
 
     // URL to redirect to after sign in process completes
     return NextResponse.redirect(requestUrl.origin)
-  } catch (error: any) {
+    } catch (error: unknown) {
     console.error('Auth callback error:', error)
-    return NextResponse.redirect(`${requestUrl.origin}/?error=callback_failed&error_description=${encodeURIComponent(error.message)}`)
+    return NextResponse.redirect(`${requestUrl.origin}/?error=callback_failed&error_description=${encodeURIComponent(error instanceof Error ? error.message : 'Unknown error')}`)
   }
 }

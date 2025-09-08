@@ -31,7 +31,7 @@ interface ProcessedImage {
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
-  const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage()
+  const { usage, refetch: refetchUsage } = useUsage()
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -47,7 +47,7 @@ export default function Home() {
   const [customDescription, setCustomDescription] = useState('')
   const [isMobileUploadOpen, setIsMobileUploadOpen] = useState(false)
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
-  const [isUpgrading, setIsUpgrading] = useState(false)
+  // const [isUpgrading, setIsUpgrading] = useState(false)
 
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files)

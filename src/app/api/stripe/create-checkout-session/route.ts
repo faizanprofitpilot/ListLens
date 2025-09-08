@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabaseClient'
-import { authenticateRequest } from '@/lib/authMiddleware'
+// import { authenticateRequest } from '@/lib/authMiddleware'
 import { UserService } from '@/lib/userService'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -85,11 +85,11 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ sessionId: session.id, url: session.url })
-  } catch (error: any) {
+        } catch (error: unknown) {
     console.error('Error creating checkout session:', error)
     console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
       userId,
       userEmail,
       plan
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Failed to create checkout session',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error' 
       },
       { status: 500 }
     )

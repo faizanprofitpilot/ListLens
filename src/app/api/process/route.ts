@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/authMiddleware'
 import { sanitizePromptInput, validateFileType, validateFileSize } from '@/lib/inputSanitizer'
 import { rateLimit } from '@/lib/rateLimiter'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
-import crypto from 'crypto'
+// import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
