@@ -3,18 +3,18 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const error = requestUrl.searchParams.get('error')
+  const errorDescription = requestUrl.searchParams.get('error_description')
+
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error, errorDescription)
+    return NextResponse.redirect(`${requestUrl.origin}/?error=${encodeURIComponent(error)}&error_description=${encodeURIComponent(errorDescription || '')}`)
+  }
+
   try {
-    const requestUrl = new URL(request.url)
-    const code = requestUrl.searchParams.get('code')
-    const error = requestUrl.searchParams.get('error')
-    const errorDescription = requestUrl.searchParams.get('error_description')
-
-    // Handle OAuth errors
-    if (error) {
-      console.error('OAuth error:', error, errorDescription)
-      return NextResponse.redirect(`${requestUrl.origin}/?error=${encodeURIComponent(error)}&error_description=${encodeURIComponent(errorDescription || '')}`)
-    }
-
     if (code) {
       const cookieStore = await cookies()
       const supabase = createServerClient(

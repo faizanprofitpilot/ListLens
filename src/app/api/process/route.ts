@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Supabase client
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     // Check usage limits before processing
     const { data: userData, error: userError } = await supabase

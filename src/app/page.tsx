@@ -108,7 +108,6 @@ export default function Home() {
     }
 
     try {
-      setIsUpgrading(true)
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -132,7 +131,7 @@ export default function Home() {
       console.error('Error creating checkout session:', error)
       alert('Failed to start upgrade process. Please try again.')
     } finally {
-      setIsUpgrading(false)
+      // Upgrade process completed
     }
   }
 
@@ -428,7 +427,7 @@ export default function Home() {
                         setIsSlideshowPaused(newPausedState);
                         
                         slides.forEach(slide => {
-                          slide.style.animationPlayState = newPausedState ? 'paused' : 'running';
+                          (slide as HTMLElement).style.animationPlayState = newPausedState ? 'paused' : 'running';
                         });
                       }}
                       className="absolute top-4 right-4 bg-white/90 hover:bg-white text-stone-700 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 cursor-pointer"
@@ -790,7 +789,6 @@ export default function Home() {
                   originalImage={chatTargetImage?.originalUrl || null}
                   processedImage={chatTargetImage?.processedUrl || null}
                   style={chatTargetImage?.style || selectedStyle}
-                  userId={user?.id || 'anonymous'}
                   fileName={chatTargetImage?.fileName}
                   onImageUpdate={handleImageUpdate}
                   onCreditUpdate={handleCreditUpdate}
@@ -1075,7 +1073,6 @@ export default function Home() {
       <MobileUploadModal
         isOpen={isMobileUploadOpen}
         onClose={() => setIsMobileUploadOpen(false)}
-        onFilesReceived={handleFileSelect}
       />
 
       {/* Sign In Modal */}

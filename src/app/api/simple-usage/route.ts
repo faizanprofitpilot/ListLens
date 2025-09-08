@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 export async function GET() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   
   if (error || !user) {
@@ -34,7 +34,7 @@ export async function GET() {
 }
 
 export async function POST() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   
   if (error || !user) {
