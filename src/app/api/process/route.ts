@@ -107,7 +107,6 @@ export async function POST(request: NextRequest) {
       if (updateError) {
         console.error('Usage increment failed:', updateError)
       } else {
-        console.log(`Usage incremented: ${used} -> ${newUsage}, remaining: ${5 - newUsage}`)
         finalUsage = { used: newUsage, remaining: 5 - newUsage, plan: 'free' }
       }
     }
