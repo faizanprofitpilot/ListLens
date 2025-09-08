@@ -53,8 +53,7 @@ export async function POST(request: NextRequest) {
         break
       }
 
-      case 'customer.subscription.deleted':
-      case 'customer.subscription.canceled': {
+      case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
         
         // Find user by customer ID
