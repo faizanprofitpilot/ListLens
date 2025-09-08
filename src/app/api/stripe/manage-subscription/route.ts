@@ -93,7 +93,6 @@ export async function POST(request: NextRequest) {
             id: subscription.id,
             status: subscription.status,
             cancel_at_period_end: subscription.cancel_at_period_end,
-            current_period_start: subscription.current_period_start,
             plan: subscription.items.data[0]?.price?.nickname || 'Pro Plan',
           }
         })
