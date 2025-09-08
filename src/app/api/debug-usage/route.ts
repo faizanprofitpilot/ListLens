@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         error: usageError?.message
       }
     })
-  } catch (error) {
+    } catch {
     return NextResponse.json({ error: 'Debug failed' }, { status: 500 })
   }
 }

@@ -25,7 +25,7 @@ export function useUsage() {
       } else {
         setError(data.error || 'Failed to fetch usage')
       }
-    } catch (err) {
+    } catch {
       setError('Network error')
     } finally {
       setLoading(false)

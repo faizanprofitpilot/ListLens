@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
             id: canceledSubscription.id,
             status: canceledSubscription.status,
             cancel_at_period_end: canceledSubscription.cancel_at_period_end,
-            current_period_end: canceledSubscription.current_period_end,
           }
         })
       }

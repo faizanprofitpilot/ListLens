@@ -17,7 +17,6 @@ interface ChatFeedbackProps {
   originalImage: string | null
   processedImage: string | null
   style: string | null
-  userId: string
   fileName?: string
   onImageUpdate: (newImage: string) => void
   onCreditUpdate: (remaining: number) => void
@@ -29,7 +28,6 @@ export default function ChatFeedback({
   originalImage,
   processedImage,
   style,
-  userId,
   fileName,
   onImageUpdate,
   onCreditUpdate

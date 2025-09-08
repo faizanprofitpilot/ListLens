@@ -8,10 +8,9 @@ import Image from 'next/image'
 interface MobileUploadModalProps {
   isOpen: boolean
   onClose: () => void
-  onFilesReceived: (files: File[]) => void
 }
 
-export default function MobileUploadModal({ isOpen, onClose, onFilesReceived }: MobileUploadModalProps) {
+export default function MobileUploadModal({ isOpen, onClose }: MobileUploadModalProps) {
   const [sessionId, setSessionId] = useState<string>('')
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
   const [mobileUrl, setMobileUrl] = useState<string>('')

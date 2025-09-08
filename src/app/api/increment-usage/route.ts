@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       free_edits_remaining: 5 - updatedUser.free_edits_used,
       is_pro: false
     })
-  } catch (error) {
+    } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

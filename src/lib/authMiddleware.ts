@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createSupabaseServerClient } from './supabaseServer'
 
-export async function authenticateRequest(request: NextRequest) {
+export async function authenticateRequest() {
   try {
     const supabase = createSupabaseServerClient()
 
@@ -12,7 +12,7 @@ export async function authenticateRequest(request: NextRequest) {
     }
 
     return { user, error: null }
-  } catch (error) {
+    } catch {
     return { user: null, error: 'Authentication failed' }
   }
 }
