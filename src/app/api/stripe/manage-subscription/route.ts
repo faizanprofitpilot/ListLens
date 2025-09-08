@@ -81,7 +81,6 @@ export async function POST(request: NextRequest) {
             id: reactivatedSubscription.id,
             status: reactivatedSubscription.status,
             cancel_at_period_end: reactivatedSubscription.cancel_at_period_end,
-            current_period_end: reactivatedSubscription.current_period_end,
           }
         })
       }
@@ -95,7 +94,6 @@ export async function POST(request: NextRequest) {
             status: subscription.status,
             cancel_at_period_end: subscription.cancel_at_period_end,
             current_period_start: subscription.current_period_start,
-            current_period_end: subscription.current_period_end,
             plan: subscription.items.data[0]?.price?.nickname || 'Pro Plan',
           }
         })
