@@ -10,7 +10,7 @@ import { createSupabaseServerClient } from '@/lib/supabaseServer'
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const { user, error: authError } = await authenticateRequest(request)
+    const { user, error: authError } = await authenticateRequest()
     if (authError || !user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
