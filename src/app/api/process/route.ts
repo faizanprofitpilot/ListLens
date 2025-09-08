@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIClient } from '@/lib/aiClient'
-import { UsageService } from '@/lib/usageService'
 import { StyleOption } from '@/components/StyleToggles'
 import { authenticateRequest } from '@/lib/authMiddleware'
 import { sanitizePromptInput, validateFileType, validateFileSize } from '@/lib/inputSanitizer'
 import { rateLimit } from '@/lib/rateLimiter'
-import { supabaseService } from '@/lib/supabaseService'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -47,6 +46,9 @@ export async function POST(request: NextRequest) {
     if (!validateFileSize(file, 10)) {
       return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 })
     }
+
+    // Initialize Supabase client
+    const supabase = createSupabaseServerClient()
 
     // Check usage limits before processing
     const { data: userData, error: userError } = await supabase
@@ -110,13 +112,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save processed image record
-    await UsageService.saveProcessedImage(
-      user.id,
-      result.originalUrl!,
-      result.processedUrl!,
-      style
-    )
+    // Image processing completed successfully
 
     return NextResponse.json({
       success: true,
