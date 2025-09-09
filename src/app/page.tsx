@@ -282,51 +282,68 @@ export default function Home() {
     }
   }, [previewImage, currentImageIndex, processedImages, handleKeyDown])
 
-  // Listen for mobile upload completion
+  // Poll for mobile upload completion
   useEffect(() => {
-    const handleMobileUploadMessage = async (event: MessageEvent) => {
-      if (event.data.type === 'MOBILE_UPLOAD_COMPLETE') {
-        const { sessionId } = event.data
+    let pollInterval: NodeJS.Timeout | null = null
+    
+    const pollForMobileUploads = async () => {
+      if (!isMobileUploadOpen) return
+      
+      try {
+        // Get the current session ID from localStorage
+        const currentSessionId = localStorage.getItem('currentMobileSessionId')
+        if (!currentSessionId) return
         
-        try {
-          // Fetch the uploaded files from the session
-          const response = await fetch(`/api/mobile-upload?sessionId=${sessionId}`)
-          const data = await response.json()
+        const response = await fetch(`/api/mobile-upload?sessionId=${currentSessionId}`)
+        const data = await response.json()
+        
+        if (data.success && data.session.files && data.session.files.length > 0) {
+          // Convert base64 data back to File objects
+          const files = data.session.files.map((fileData: { name: string; data: string; type: string }) => {
+            const byteCharacters = atob(fileData.data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: fileData.type })
+            return new File([blob], fileData.name, { type: fileData.type })
+          })
           
-          if (data.success && data.session.files) {
-            // Convert base64 data back to File objects
-            const files = data.session.files.map((fileData: { name: string; data: string; type: string }) => {
-              const byteCharacters = atob(fileData.data)
-              const byteNumbers = new Array(byteCharacters.length)
-              for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i)
-              }
-              const byteArray = new Uint8Array(byteNumbers)
-              const blob = new Blob([byteArray], { type: fileData.type })
-              return new File([blob], fileData.name, { type: fileData.type })
-            })
-            
-            // Add the files to the main upload interface
-            handleFileSelect(files)
-            
-            // Close the mobile upload modal
-            setIsMobileUploadOpen(false)
-            
-            // Show success message
-            alert(`Mobile upload successful! ${files.length} photos added to your upload.`)
+          // Add the files to the main upload interface
+          handleFileSelect(files)
+          
+          // Close the mobile upload modal
+          setIsMobileUploadOpen(false)
+          
+          // Clear the session ID
+          localStorage.removeItem('currentMobileSessionId')
+          
+          // Clear the polling interval
+          if (pollInterval) {
+            clearInterval(pollInterval)
+            pollInterval = null
           }
-        } catch (error) {
-          console.error('Error fetching mobile upload:', error)
+          
+          // Show success message
+          alert(`Mobile upload successful! ${files.length} photos added to your upload.`)
         }
+      } catch (error) {
+        console.error('Error polling for mobile upload:', error)
       }
     }
-
-    window.addEventListener('message', handleMobileUploadMessage)
+    
+    // Start polling when mobile upload modal is open
+    if (isMobileUploadOpen) {
+      pollInterval = setInterval(pollForMobileUploads, 2000) // Poll every 2 seconds
+    }
     
     return () => {
-      window.removeEventListener('message', handleMobileUploadMessage)
+      if (pollInterval) {
+        clearInterval(pollInterval)
+      }
     }
-  }, [])
+  }, [isMobileUploadOpen, handleFileSelect])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50">

@@ -22,6 +22,9 @@ export default function MobileUploadModal({ isOpen, onClose }: MobileUploadModal
       const newSessionId = `mobile-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       setSessionId(newSessionId)
       
+      // Store session ID in localStorage for polling
+      localStorage.setItem('currentMobileSessionId', newSessionId)
+      
       // Create mobile URL
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
       const newMobileUrl = `${baseUrl}/mobile-upload/${newSessionId}`
@@ -36,6 +39,9 @@ export default function MobileUploadModal({ isOpen, onClose }: MobileUploadModal
           light: '#ffffff'
         }
       }).then(setQrCodeUrl)
+    } else {
+      // Clear session ID when modal is closed
+      localStorage.removeItem('currentMobileSessionId')
     }
   }, [isOpen])
 

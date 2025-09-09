@@ -71,15 +71,8 @@ export default function MobileUploadPage() {
       if (response.ok) {
         setUploadComplete(true)
         
-        // Notify the main page that files are ready
-        // We'll use a custom event to communicate with the parent window
-        if (window.opener) {
-          window.opener.postMessage({
-            type: 'MOBILE_UPLOAD_COMPLETE',
-            sessionId: sessionId,
-            fileCount: selectedFiles.length
-          }, '*')
-        }
+        // The laptop interface will poll for the uploaded files
+        // No need for postMessage since we're using polling
         
         // Close the mobile page after a delay
         setTimeout(() => {
