@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         
         console.log(`Processing subscription ${subscription.id} for customer ${subscription.customer}`)
+        console.log(`Subscription status: ${subscription.status}, cancel_at_period_end: ${subscription.cancel_at_period_end}`)
         
         // Find user by customer ID
         const { data: user, error: fetchError } = await supabase
@@ -43,21 +44,24 @@ export async function POST(request: NextRequest) {
         if (user) {
           console.log(`Found user ${user.email} (${user.id}), current is_pro: ${user.is_pro}`)
           
-          // Update user to Pro
+          // Determine if user should be Pro based on subscription status
+          const shouldBePro = subscription.status === 'active' && !subscription.cancel_at_period_end
+          
+          // Update user Pro status
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
-              is_pro: true,
+              is_pro: shouldBePro,
               updated_at: new Date().toISOString()
             })
             .eq('id', user.id)
 
           if (updateError) {
-            console.error('Error updating user to Pro:', updateError)
+            console.error('Error updating user Pro status:', updateError)
             return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
           }
           
-          console.log(`Successfully updated user ${user.email} to Pro`)
+          console.log(`Successfully updated user ${user.email} to ${shouldBePro ? 'Pro' : 'Free'}`)
         }
         break
       }
