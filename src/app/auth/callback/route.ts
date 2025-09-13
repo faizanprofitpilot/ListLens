@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import { UserService } from '@/lib/userService'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -45,11 +44,43 @@ export async function GET(request: NextRequest) {
 
       console.log('Auth successful for user:', data.user?.email)
       
-      // Ensure user record exists in database
+      // Ensure user record exists in database using server-side client
       if (data.user?.id && data.user?.email) {
         try {
-          await UserService.getUser(data.user.id, data.user.email)
-          console.log('User record ensured in database')
+          // Check if user exists in users table
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
+
+          if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
+            console.error('Error fetching user:', fetchError)
+            throw fetchError
+          }
+
+          if (!existingUser) {
+            // Create new user if none exists
+            const { data: newUser, error: createError } = await supabase
+              .from('users')
+              .insert({
+                id: data.user.id,
+                email: data.user.email,
+                is_pro: false,
+                free_edits_used: 0
+              })
+              .select()
+              .single()
+
+            if (createError) {
+              console.error('Error creating user:', createError)
+              throw createError
+            }
+
+            console.log('User record created in database:', newUser?.email)
+          } else {
+            console.log('User record already exists in database:', existingUser.email)
+          }
         } catch (error) {
           console.error('Error ensuring user record:', error)
           // Continue anyway - the user can still use the app
