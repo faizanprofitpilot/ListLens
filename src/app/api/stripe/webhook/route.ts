@@ -47,11 +47,13 @@ export async function POST(request: NextRequest) {
           // Determine if user should be Pro based on subscription status
           const shouldBePro = subscription.status === 'active' && !subscription.cancel_at_period_end
           
-          // Update user Pro status
+          // Update user Pro status and plan
+          const plan = shouldBePro ? 'pro' : 'free'
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
               is_pro: shouldBePro,
+              plan: plan,
               updated_at: new Date().toISOString()
             })
             .eq('id', user.id)
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
             .from('users')
             .update({ 
               is_pro: false,
+              plan: 'free',
               updated_at: new Date().toISOString()
             })
             .eq('id', user.id)

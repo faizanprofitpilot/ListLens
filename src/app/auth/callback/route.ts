@@ -67,7 +67,10 @@ export async function GET(request: NextRequest) {
                 id: data.user.id,
                 email: data.user.email,
                 is_pro: false,
-                free_edits_used: 0
+                plan: 'free',
+                free_edits_used: 0,
+                monthly_edits_used: 0,
+                last_reset_date: new Date().toISOString()
               })
               .select()
               .single()
