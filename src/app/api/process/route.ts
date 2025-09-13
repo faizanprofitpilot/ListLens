@@ -127,9 +127,10 @@ export async function POST(request: NextRequest) {
     
     // Handle specific error types
     if (error instanceof Error) {
-      if (error.message.includes('API key')) {
+      if (error.message.includes('API key') || error.message.includes('GEMINI_API_KEY')) {
+        console.error('Gemini API key issue:', error.message)
         return NextResponse.json({ 
-          error: 'AI service configuration error' 
+          error: 'AI service configuration error. Please try again later.' 
         }, { status: 503 })
       }
       
@@ -138,7 +139,26 @@ export async function POST(request: NextRequest) {
           error: 'Processing timeout. Please try again with a smaller image.' 
         }, { status: 408 })
       }
+      
+      if (error.message.includes('rate limit') || error.message.includes('quota')) {
+        return NextResponse.json({ 
+          error: 'AI service rate limit exceeded. Please try again in a few minutes.' 
+        }, { status: 429 })
+      }
+      
+      if (error.message.includes('network') || error.message.includes('fetch')) {
+        return NextResponse.json({ 
+          error: 'Network error. Please check your connection and try again.' 
+        }, { status: 502 })
+      }
     }
+
+    // Log the full error for debugging
+    console.error('Full error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
 
     return NextResponse.json(
       { error: 'Failed to process image. Please try again.' },

@@ -251,11 +251,18 @@ export default function Home() {
           formData.append('customDescription', customDescription.trim())
         }
 
+        // Create an AbortController for timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+        
         const response = await fetch('/api/process', {
           method: 'POST',
           credentials: 'include',
           body: formData,
+          signal: controller.signal,
         })
+        
+        clearTimeout(timeoutId)
 
         const result = await response.json()
         
@@ -279,7 +286,17 @@ export default function Home() {
       setProcessedImages(newProcessedImages)
     } catch (error) {
       console.error('Error processing images:', error)
-      setError('Network error. Please check your connection and try again.')
+      
+      // Provide more specific error messages based on error type
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setError('Connection failed. Please check your internet connection and try again.')
+      } else if (error instanceof Error && (error.message.includes('timeout') || error.name === 'AbortError')) {
+        setError('Request timed out. Please try with a smaller image or try again later.')
+      } else if (error instanceof Error && error.message.includes('API')) {
+        setError('AI service temporarily unavailable. Please try again in a few minutes.')
+      } else {
+        setError('Network error. Please check your connection and try again.')
+      }
     } finally {
       setIsProcessing(false)
       setBatchProgress(null)
