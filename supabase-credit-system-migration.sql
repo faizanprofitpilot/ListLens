@@ -1,17 +1,23 @@
 -- Credit System Migration
 -- Add new columns for proper plan-based credit tracking
 
+-- First, create the plan enum type if it doesn't exist
+DO $$ BEGIN
+  CREATE TYPE plan_t AS ENUM ('free', 'pro', 'turbo');
+EXCEPTION WHEN duplicate_object THEN NULL; 
+END $$;
+
 -- Add new columns to users table
 ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'turbo')),
+  ADD COLUMN IF NOT EXISTS plan plan_t DEFAULT 'free',
   ADD COLUMN IF NOT EXISTS monthly_edits_used INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS last_reset_date TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- Update existing users to have proper plan values
 UPDATE public.users 
 SET plan = CASE 
-  WHEN is_pro = true THEN 'pro'
-  ELSE 'free'
+  WHEN is_pro = true THEN 'pro'::plan_t
+  ELSE 'free'::plan_t
 END
 WHERE plan IS NULL OR plan = 'free';
 
