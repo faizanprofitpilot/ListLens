@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { UserService } from '@/lib/userService'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -43,6 +44,17 @@ export async function GET(request: NextRequest) {
       }
 
       console.log('Auth successful for user:', data.user?.email)
+      
+      // Ensure user record exists in database
+      if (data.user?.id && data.user?.email) {
+        try {
+          await UserService.getUser(data.user.id, data.user.email)
+          console.log('User record ensured in database')
+        } catch (error) {
+          console.error('Error ensuring user record:', error)
+          // Continue anyway - the user can still use the app
+        }
+      }
     }
 
     // URL to redirect to after sign in process completes

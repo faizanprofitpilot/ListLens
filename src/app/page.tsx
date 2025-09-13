@@ -14,6 +14,7 @@ import { Zap, Star, Users, Eye, Download, MessageCircle, X, ChevronLeft, Chevron
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUsage } from '@/hooks/useUsage'
+import { UserService } from '@/lib/userService'
 
 // Global type declaration for refresh function
 declare global {
@@ -48,6 +49,26 @@ export default function Home() {
   const [isMobileUploadOpen, setIsMobileUploadOpen] = useState(false)
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   // const [isUpgrading, setIsUpgrading] = useState(false)
+
+  // Ensure user record exists in database when user is authenticated
+  useEffect(() => {
+    const ensureUserRecord = async () => {
+      if (user?.id && user?.email) {
+        try {
+          await UserService.getUser(user.id, user.email)
+          console.log('User record ensured in database')
+        } catch (error) {
+          console.error('Error ensuring user record:', error)
+          // If there's an error, the user might need to sign in again
+          // This will be handled by the usage hook which will show an error
+        }
+      }
+    }
+
+    if (!authLoading && user) {
+      ensureUserRecord()
+    }
+  }, [user, authLoading])
 
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files)
