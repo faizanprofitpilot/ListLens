@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import Hero from '@/components/Hero'
 import UploadBox from '@/components/UploadBox'
@@ -70,12 +70,12 @@ export default function Home() {
     }
   }, [user, authLoading])
 
-  const handleFileSelect = (files: File[]) => {
+  const handleFileSelect = useCallback((files: File[]) => {
     setSelectedFiles(files)
     setProcessedImages([]) // Reset processed images when new files are selected
     setCustomDescription('') // Clear custom description when new files are selected
     setError(null) // Clear any previous errors
-  }
+  }, [])
 
   const handleRemoveFile = (index: number) => {
     const newFiles = selectedFiles.filter((_, i) => i !== index)
@@ -211,7 +211,7 @@ export default function Home() {
     }
   }
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!previewImage) return
     
     if (e.key === 'ArrowRight' && currentImageIndex < processedImages.length - 1) {
@@ -227,7 +227,7 @@ export default function Home() {
     } else if (e.key === 'Escape') {
       setPreviewImage(null)
     }
-  }
+  }, [previewImage, currentImageIndex, processedImages])
 
   const handleProcessImages = async () => {
     if (selectedFiles.length === 0 || !selectedStyle) return

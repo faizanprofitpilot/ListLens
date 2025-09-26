@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { CheckCircle, Loader2 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
 import { useUsage } from '@/hooks/useUsage'
 
 export default function SuccessPage() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
-  const { user } = useAuth()
   const { usage, refetch: refetchUsage } = useUsage()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -61,12 +60,12 @@ export default function SuccessPage() {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Subscription Error</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
           >
             Return to Home
-          </a>
+          </Link>
         </div>
       </div>
     )
@@ -103,19 +102,19 @@ export default function SuccessPage() {
         )}
 
         <div className="space-y-3">
-          <a
+          <Link
             href="/"
             className="w-full inline-flex items-center justify-center px-4 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           >
             Start Processing Images
-          </a>
+          </Link>
           
-          <a
+          <Link
             href="/?manage=true"
             className="w-full inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
           >
             Manage Subscription
-          </a>
+          </Link>
         </div>
 
         <p className="text-xs text-gray-500 mt-6">

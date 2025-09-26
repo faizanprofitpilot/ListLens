@@ -136,7 +136,7 @@ export class UserService {
       // Check if monthly reset is needed for Pro/Turbo users
       if (currentUser.plan !== 'free' && this.needsMonthlyReset(currentUser.last_reset_date)) {
         // Reset monthly usage first
-        const { data: resetUser, error: resetError } = await supabase
+        const { error: resetError } = await supabase
           .from('users')
           .update({
             monthly_edits_used: 0,
