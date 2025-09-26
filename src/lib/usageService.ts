@@ -101,7 +101,7 @@ export class UsageService {
   static async hasFreeEditsRemaining(userId: string): Promise<boolean> {
     try {
       // Use the new UserService for Pro status checking
-      return await UserService.hasFreeEditsRemaining(userId)
+      return await UserService.hasEditsRemaining(userId)
     } catch (error) {
       console.error('Error checking free edits:', error)
       return true // Allow processing if we can't check
