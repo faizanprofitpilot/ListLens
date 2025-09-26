@@ -95,7 +95,7 @@ export default function SuccessPage() {
             <div className="flex items-center justify-between mt-2">
               <span className="text-sm font-medium text-gray-700">Credits:</span>
               <span className="text-sm font-bold text-amber-700">
-                {usage.isPro ? 'Unlimited' : `${usage.remaining} remaining`}
+                {usage.plan !== 'free' ? 'Unlimited' : `${usage.remaining} remaining`}
               </span>
             </div>
           </div>
