@@ -153,7 +153,7 @@ export default function MobileUploadPage() {
             onClick={handleGallerySelect}
             className="bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl p-6 text-center hover:from-amber-200 hover:to-orange-200 transition-all cursor-pointer"
           >
-            <Image className="w-8 h-8 text-amber-600 mx-auto mb-2" alt="Gallery icon" />
+            <Image className="w-8 h-8 text-amber-600 mx-auto mb-2" />
             <p className="text-sm font-medium text-stone-800">From Gallery</p>
             <p className="text-xs text-stone-500 mt-1">All devices</p>
           </button>
