@@ -1118,6 +1118,9 @@ export default function Home() {
           <p className="text-stone-400 mb-4">
             AI-powered real estate photo enhancement
           </p>
+          <div className="text-sm text-stone-500 mb-2">
+            Need help? Contact us at <a href="mailto:listlens2025@gmail.com" className="text-blue-400 hover:text-blue-300 underline">listlens2025@gmail.com</a>
+          </div>
           <div className="text-sm text-stone-500">
             © 2024 ListLens. All rights reserved.
           </div>
