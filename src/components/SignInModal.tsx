@@ -87,7 +87,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             <ul className="text-xs text-stone-600 space-y-1">
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-                100 free photo edits
+                5 free photo edits
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
