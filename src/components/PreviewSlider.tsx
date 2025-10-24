@@ -36,11 +36,18 @@ export default function PreviewSlider({
     try {
       console.log('PreviewSlider: Attempting to download:', imageUrl, filename)
       
-      // Handle data URLs differently
+      // Handle data URLs differently - don't fetch them, convert directly
       if (imageUrl.startsWith('data:')) {
-        // For data URLs, create blob directly from base64
-        const response = await fetch(imageUrl)
-        const blob = await response.blob()
+        // For data URLs, convert base64 to blob directly without fetch
+        const base64Data = imageUrl.split(',')[1]
+        const byteCharacters = atob(base64Data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], { type: 'image/png' })
+        
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
