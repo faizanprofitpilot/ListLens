@@ -34,18 +34,58 @@ export default function PreviewSlider({
 
   const handleDownload = async (imageUrl: string, filename: string) => {
     try {
-      const response = await fetch(imageUrl)
+      console.log('PreviewSlider: Attempting to download:', imageUrl, filename)
+      
+      // Handle data URLs differently
+      if (imageUrl.startsWith('data:')) {
+        // For data URLs, create blob directly from base64
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        console.log('PreviewSlider: Download completed for data URL')
+        return
+      }
+      
+      // For regular URLs, fetch and download
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = filename
+      link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
+      console.log('PreviewSlider: Download completed for regular URL')
+      
     } catch (error) {
-      console.error('Download failed:', error)
+      console.error('PreviewSlider: Download failed:', error)
+      // Fallback: try opening in new tab
+      try {
+        window.open(imageUrl, '_blank')
+        console.log('PreviewSlider: Opened image in new tab as fallback')
+      } catch (fallbackError) {
+        console.error('PreviewSlider: Fallback also failed:', fallbackError)
+        alert('Download failed. Please try right-clicking on the image and selecting "Save image as..."')
+      }
     }
   }
 

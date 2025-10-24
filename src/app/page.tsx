@@ -170,41 +170,79 @@ export default function Home() {
 
   const handleDownload = async (imageUrl: string, filename: string) => {
     try {
-      const response = await fetch(imageUrl)
+      console.log('Attempting to download:', imageUrl, filename)
+      
+      // Handle data URLs differently
+      if (imageUrl.startsWith('data:')) {
+        // For data URLs, create blob directly from base64
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        console.log('Download completed for data URL')
+        return
+      }
+      
+      // For regular URLs, fetch and download
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
+      a.style.display = 'none'
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      console.log('Download completed for regular URL')
+      
     } catch (error) {
       console.error('Download failed:', error)
+      // Fallback: try opening in new tab
+      try {
+        window.open(imageUrl, '_blank')
+        console.log('Opened image in new tab as fallback')
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError)
+        alert('Download failed. Please try right-clicking on the image and selecting "Save image as..."')
+      }
     }
   }
 
   const handleDownloadAll = async () => {
     try {
+      console.log('Starting bulk download of', processedImages.length, 'images')
+      
       for (let i = 0; i < processedImages.length; i++) {
         const image = processedImages[i]
-        const response = await fetch(image.processedUrl)
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `enhanced-${image.fileName}`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        console.log(`Downloading ${i + 1}/${processedImages.length}:`, image.fileName)
+        
+        // Use the improved handleDownload function
+        await handleDownload(image.processedUrl, `enhanced-${image.fileName}`)
         
         // Small delay between downloads to avoid overwhelming the browser
         if (i < processedImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300))
+          await new Promise(resolve => setTimeout(resolve, 500))
         }
       }
+      
+      console.log('Bulk download completed')
     } catch (error) {
       console.error('Download all failed:', error)
       setError('Failed to download some images. Please try downloading individually.')
