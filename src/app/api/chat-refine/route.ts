@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIClient } from '@/lib/aiClient'
 import { UsageService } from '@/lib/usageService'
-import { UserService } from '@/lib/userService'
 import { authenticateRequest } from '@/lib/authMiddleware'
 import { sanitizePromptInput } from '@/lib/inputSanitizer'
 import { rateLimit } from '@/lib/rateLimiter'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 // Extract room context from filename
 function extractRoomContext(filename: string): string {
@@ -79,16 +79,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Initialize Supabase client
+    const supabase = await createSupabaseServerClient()
+
     // Get current user and check usage limits
-    const currentUser = await UserService.getUser(user.id, user.email!)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('free_edits_used, monthly_edits_used, is_pro, plan, last_reset_date')
+      .eq('id', user.id)
+      .single()
+
+    if (userError) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if monthly reset is needed for Pro/Turbo users
+    const now = new Date()
+    const lastReset = new Date(userData.last_reset_date || now.toISOString())
+    const needsReset = userData.plan !== 'free' && 
+      (now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear())
+
+    if (needsReset) {
+      // Reset monthly usage
+      await supabase
+        .from('users')
+        .update({ 
+          monthly_edits_used: 0,
+          last_reset_date: now.toISOString()
+        })
+        .eq('id', user.id)
+      
+      userData.monthly_edits_used = 0
+    }
+
+    // Calculate usage and quota based on plan
+    const plan = userData.plan || 'free'
+    const quota = plan === 'free' ? 5 : plan === 'pro' ? 350 : 2000
+    const used = plan === 'free' ? (userData.free_edits_used || 0) : (userData.monthly_edits_used || 0)
+    const remaining = Math.max(0, quota - used)
     
-    // Check if user has free edits remaining (Pro users have unlimited)
-    if (!currentUser.is_pro && currentUser.free_edits_used >= 5) {
+    // Check if user has remaining edits
+    if (remaining <= 0) {
       return NextResponse.json(
         { 
-          success: false, 
-          error: 'No free edits remaining. Please upgrade to continue.',
-          upgradeRequired: true
+          success: false,
+          error: plan === 'free' 
+            ? 'No free edits remaining. Please upgrade to continue.'
+            : `Monthly limit reached. You have used ${used} of ${quota} monthly edits.`,
+          upgradeRequired: plan === 'free'
         },
         { status: 402 }
       )
@@ -120,16 +158,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Increment usage (only for non-Pro users)
-    let updatedUser = currentUser
-    if (!currentUser.is_pro) {
-      try {
-        updatedUser = await UserService.incrementUsage(user.id)
-        console.log(`Usage incremented for user ${user.id}: ${currentUser.free_edits_used} -> ${updatedUser.free_edits_used}`)
-      } catch (error) {
-        console.error('Error incrementing usage:', error)
-        // Continue processing even if usage tracking fails
-      }
+    // Increment usage after successful processing
+    const newUsage = used + 1
+    const updateData = plan === 'free' 
+      ? { free_edits_used: newUsage }
+      : { monthly_edits_used: newUsage }
+    
+    const { error: updateError } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('Usage increment failed:', updateError)
+      // Continue processing even if usage tracking fails
+    } else {
+      console.log(`Usage incremented for user ${user.id} (${plan}): ${used} -> ${newUsage}`)
     }
     
     // Save the processed image
@@ -142,8 +186,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate remaining edits from the updated user data
-    const freeEditsRemaining = updatedUser.is_pro ? -1 : Math.max(0, 5 - updatedUser.free_edits_used)
+    // Calculate remaining edits after increment
+    const finalRemaining = Math.max(0, quota - newUsage)
 
     // Generate a friendly AI response
     const aiResponse = generateAIResponse(sanitizedMessage, result.processingTime || '0s')
@@ -152,8 +196,8 @@ export async function POST(request: NextRequest) {
       success: true,
       response: aiResponse,
       newImage: result.processedUrl,
-      freeEditsRemaining,
-      upgradeRequired: freeEditsRemaining === 0
+      freeEditsRemaining: finalRemaining,
+      upgradeRequired: finalRemaining === 0 && plan === 'free'
     })
 
   } catch (error) {
