@@ -152,8 +152,8 @@ export default function ChatFeedback({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-gradient-to-r from-amber-600 to-orange-600 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <Bot className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">AI Editor</h3>
