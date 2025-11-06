@@ -56,7 +56,7 @@ export const LowCreditsEmail = ({ firstName, remainingCredits, ctaUrl = 'https:/
   <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
     <div style={{ backgroundColor: '#f59e0b', padding: '32px', textAlign: 'center', borderRadius: '8px 8px 0 0' }}>
       <h1 style={{ color: '#ffffff', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>
-        👀 Don't Let Your Free Edits Expire!
+        👀 Don&apos;t Let Your Free Edits Expire!
       </h1>
     </div>
     
@@ -70,7 +70,7 @@ export const LowCreditsEmail = ({ firstName, remainingCredits, ctaUrl = 'https:/
       </p>
       
       <p style={{ fontSize: '16px', color: '#4b5563', lineHeight: '1.6' }}>
-        Don't let them go to waste. Upload your photos now and experience the magic of AI-powered real estate photography.
+        Don&apos;t let them go to waste. Upload your photos now and experience the magic of AI-powered real estate photography.
       </p>
       
       <div style={{ textAlign: 'center', margin: '32px 0' }}>
@@ -112,7 +112,7 @@ export const StarterUpsellEmail = ({ firstName, ctaUrl = 'https://listlens.app' 
       </p>
       
       <p style={{ fontSize: '16px', color: '#4b5563', lineHeight: '1.6' }}>
-        You've been using ListLens Starter for 21 days — that's awesome! 🎉
+        You&apos;ve been using ListLens Starter for 21 days — that&apos;s awesome! 🎉
       </p>
       
       <p style={{ fontSize: '16px', color: '#4b5563', lineHeight: '1.6' }}>
@@ -123,7 +123,7 @@ export const StarterUpsellEmail = ({ firstName, ctaUrl = 'https://listlens.app' 
         <li>350 photo edits per month (vs 50 with Starter)</li>
         <li>Priority processing — faster results</li>
         <li>Batch uploads — process multiple photos at once</li>
-        <li>Email support — we've got your back</li>
+        <li>Email support — we&apos;ve got your back</li>
       </ul>
       
       <div style={{ textAlign: 'center', margin: '32px 0' }}>
@@ -145,7 +145,7 @@ export const StarterUpsellEmail = ({ firstName, ctaUrl = 'https://listlens.app' 
       </div>
       
       <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', marginTop: '32px' }}>
-        Questions? Reply to this email — we're here to help!
+        Questions? Reply to this email — we&apos;re here to help!
       </p>
     </div>
   </div>
