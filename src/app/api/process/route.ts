@@ -101,7 +101,10 @@ export async function POST(request: NextRequest) {
       const newUsage = used + 1
       const { error: updateError } = await supabase
         .from('users')
-        .update({ free_edits_used: newUsage })
+        .update({ 
+          free_edits_used: newUsage,
+          last_activity_at: new Date().toISOString()
+        })
         .eq('id', user.id)
 
       if (updateError) {
@@ -109,6 +112,12 @@ export async function POST(request: NextRequest) {
       } else {
         finalUsage = { used: newUsage, remaining: 5 - newUsage, plan: 'free' }
       }
+    } else {
+      // Update activity for Pro users too
+      await supabase
+        .from('users')
+        .update({ last_activity_at: new Date().toISOString() })
+        .eq('id', user.id)
     }
 
     // Image processing completed successfully

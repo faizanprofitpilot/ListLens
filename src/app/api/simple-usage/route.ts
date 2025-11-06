@@ -20,7 +20,7 @@ export async function GET() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  // Check if monthly reset is needed for Pro/Turbo users
+  // Check if monthly reset is needed for paid plan users
   const now = new Date()
   const lastReset = new Date(userData.last_reset_date || now.toISOString())
   const needsReset = userData.plan !== 'free' && 
@@ -42,7 +42,7 @@ export async function GET() {
   // Calculate usage and quota based on plan
   const plan = userData.plan || 'free'
   const used = plan === 'free' ? (userData.free_edits_used || 0) : (userData.monthly_edits_used || 0)
-  const quota = plan === 'free' ? 5 : plan === 'pro' ? 350 : 2000
+  const quota = plan === 'free' ? 5 : plan === 'starter' ? 50 : plan === 'pro' ? 350 : 2000
   const remaining = Math.max(0, quota - used)
 
   return NextResponse.json({
@@ -73,7 +73,7 @@ export async function POST() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  // Check if monthly reset is needed for Pro/Turbo users
+  // Check if monthly reset is needed for paid plan users
   const now = new Date()
   const lastReset = new Date(userData.last_reset_date || now.toISOString())
   const needsReset = userData.plan !== 'free' && 
@@ -93,7 +93,7 @@ export async function POST() {
   }
 
   const plan = userData.plan || 'free'
-  const quota = plan === 'free' ? 5 : plan === 'pro' ? 350 : 2000
+  const quota = plan === 'free' ? 5 : plan === 'starter' ? 50 : plan === 'pro' ? 350 : 2000
   const currentUsed = plan === 'free' ? (userData.free_edits_used || 0) : (userData.monthly_edits_used || 0)
   
   // Check if user has remaining credits

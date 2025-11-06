@@ -122,7 +122,7 @@ export default function Home() {
     }
   }
 
-  const handleUpgrade = async (plan: 'pro' | 'turbo' = 'pro') => {
+  const handleUpgrade = async (plan: 'starter' | 'pro' | 'team' = 'pro') => {
     if (!user) {
       setIsSignInModalOpen(true)
       return

@@ -3,7 +3,7 @@
 import { Check, Star, Zap } from 'lucide-react'
 
 interface PricingProps {
-  onUpgrade?: (plan: 'pro' | 'turbo') => void
+  onUpgrade?: (plan: 'starter' | 'pro' | 'team') => void
 }
 
 export default function Pricing({ onUpgrade }: PricingProps = {}) {
@@ -48,13 +48,13 @@ export default function Pricing({ onUpgrade }: PricingProps = {}) {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {/* Free Plan */}
           <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-8 relative">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-stone-800 mb-2">Free</h3>
               <div className="text-4xl font-bold text-stone-600 mb-2">$0</div>
-              <p className="text-stone-500">Perfect for trying out our service</p>
+              <p className="text-stone-500">Perfect for trying out</p>
             </div>
             
             <ul className="space-y-4 mb-8">
@@ -81,6 +81,41 @@ export default function Pricing({ onUpgrade }: PricingProps = {}) {
               className="w-full bg-stone-100 text-stone-700 py-3 rounded-lg font-medium hover:bg-stone-200 transition-colors cursor-pointer"
             >
               Get Started Free
+            </button>
+          </div>
+
+          {/* Starter Plan */}
+          <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-8 relative">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-stone-800 mb-2">Starter</h3>
+              <div className="text-4xl font-bold text-stone-600 mb-2">$29</div>
+              <p className="text-stone-500">per month</p>
+            </div>
+            
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-stone-700">50 photo edits per month</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-stone-700">All style options</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-stone-700">Chat refinements</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-stone-700">High-quality downloads</span>
+              </li>
+            </ul>
+
+            <button
+              onClick={() => onUpgrade ? onUpgrade('starter') : scrollToUpload()}
+              className="w-full bg-stone-100 text-stone-700 py-3 rounded-lg font-medium hover:bg-stone-200 transition-colors cursor-pointer"
+            >
+              {onUpgrade ? 'Upgrade to Starter' : 'Start Starter'}
             </button>
           </div>
 
@@ -111,7 +146,7 @@ export default function Pricing({ onUpgrade }: PricingProps = {}) {
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-stone-700">Unlimited chat refinements</span>
+                <span className="text-stone-700">Chat refinements</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
@@ -135,11 +170,11 @@ export default function Pricing({ onUpgrade }: PricingProps = {}) {
             </button>
           </div>
 
-          {/* Enterprise Plan */}
+          {/* Team Plan */}
           <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-8 relative">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-stone-800 mb-2">Turbo</h3>
-              <div className="text-4xl font-bold text-stone-600 mb-2">$499</div>
+              <h3 className="text-2xl font-bold text-stone-800 mb-2">Team</h3>
+              <div className="text-4xl font-bold text-stone-600 mb-2">$350</div>
               <p className="text-stone-500">per month</p>
             </div>
             
@@ -154,31 +189,27 @@ export default function Pricing({ onUpgrade }: PricingProps = {}) {
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-stone-700">Unlimited chat refinements</span>
+                <span className="text-stone-700">Chat refinements</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-stone-700">Fastest processing</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-stone-700">API access</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-stone-700">White-label options</span>
+                <span className="text-stone-700">Priority processing</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <span className="text-stone-700">Priority support</span>
               </li>
+              <li className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-stone-700">Shared account access (multiple teammates can stay logged in)</span>
+              </li>
             </ul>
 
             <button
-              onClick={() => onUpgrade ? onUpgrade('turbo') : scrollToUpload()}
+              onClick={() => onUpgrade ? onUpgrade('team') : scrollToUpload()}
               className="w-full bg-stone-100 text-stone-700 py-3 rounded-lg font-medium hover:bg-stone-200 transition-colors cursor-pointer"
             >
-              {onUpgrade ? 'Upgrade to Turbo' : 'Start Turbo'}
+              {onUpgrade ? 'Upgrade to Team' : 'Start Team'}
             </button>
           </div>
         </div>

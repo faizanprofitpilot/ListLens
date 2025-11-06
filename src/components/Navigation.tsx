@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import UserProfile from './UserProfile'
 
 interface NavigationProps {
-  onUpgrade?: (plan: 'pro' | 'turbo') => void
+  onUpgrade?: (plan: 'starter' | 'pro' | 'team') => void
 }
 
 export default function Navigation({ onUpgrade }: NavigationProps = {}) {

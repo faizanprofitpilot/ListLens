@@ -44,11 +44,28 @@ export async function POST(request: NextRequest) {
         if (user) {
           console.log(`Found user ${user.email} (${user.id}), current is_pro: ${user.is_pro}`)
           
-          // Determine if user should be Pro based on subscription status
-          const shouldBePro = subscription.status === 'active' && !subscription.cancel_at_period_end
+          // Determine if user should have active subscription
+          const isActive = subscription.status === 'active' && !subscription.cancel_at_period_end
           
-          // Update user Pro status and plan
-          const plan = shouldBePro ? 'pro' : 'free'
+          // Determine plan from subscription price ID
+          let plan: 'free' | 'starter' | 'pro' | 'team' = 'free'
+          if (isActive && subscription.items?.data?.[0]?.price?.id) {
+            const priceId = subscription.items.data[0].price.id
+            const starterPriceId = process.env.STRIPE_STARTER_PRICE_ID
+            const proPriceId = process.env.STRIPE_PRO_PRICE_ID
+            const teamPriceId = process.env.STRIPE_TEAM_PRICE_ID
+            
+            if (priceId === starterPriceId) {
+              plan = 'starter'
+            } else if (priceId === proPriceId) {
+              plan = 'pro'
+            } else if (priceId === teamPriceId) {
+              plan = 'team'
+            }
+          }
+          
+          // Update user Pro status and plan (is_pro is true for any paid plan)
+          const shouldBePro = isActive && plan !== 'free'
           const { error: updateError } = await supabase
             .from('users')
             .update({ 

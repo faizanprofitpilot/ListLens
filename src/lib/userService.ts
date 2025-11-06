@@ -4,7 +4,7 @@ export interface User {
   id: string
   email: string
   is_pro: boolean
-  plan: 'free' | 'pro' | 'turbo'
+  plan: 'free' | 'starter' | 'pro' | 'team'
   free_edits_used: number
   monthly_edits_used: number
   last_reset_date: string
@@ -15,11 +15,12 @@ export interface User {
 
 export class UserService {
   // Get plan quota based on plan type
-  static getPlanQuota(plan: 'free' | 'pro' | 'turbo'): number {
+  static getPlanQuota(plan: 'free' | 'starter' | 'pro' | 'team'): number {
     switch (plan) {
       case 'free': return 5
+      case 'starter': return 50
       case 'pro': return 350
-      case 'turbo': return 2000
+      case 'team': return 2000
       default: return 5
     }
   }
@@ -133,7 +134,7 @@ export class UserService {
       // Get current user data
       const currentUser = await this.getUser(userId, '')
       
-      // Check if monthly reset is needed for Pro/Turbo users
+      // Check if monthly reset is needed for paid plan users
       if (currentUser.plan !== 'free' && this.needsMonthlyReset(currentUser.last_reset_date)) {
         // Reset monthly usage first
         const { error: resetError } = await supabase
@@ -201,7 +202,7 @@ export class UserService {
     try {
       const user = await this.getUser(userId, '')
       
-      // Check if monthly reset is needed for Pro/Turbo users
+      // Check if monthly reset is needed for paid plan users
       if (user.plan !== 'free' && this.needsMonthlyReset(user.last_reset_date)) {
         // Reset monthly usage
         await supabase

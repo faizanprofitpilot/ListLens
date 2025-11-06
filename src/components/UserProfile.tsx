@@ -7,7 +7,7 @@ import { useUsage } from '@/hooks/useUsage'
 
 interface UserProfileProps {
   onUsageUpdate?: () => void
-  onUpgrade?: (plan: 'pro' | 'turbo') => void
+  onUpgrade?: (plan: 'starter' | 'pro' | 'team') => void
 }
 
 export default function UserProfile({ onUsageUpdate, onUpgrade }: UserProfileProps = {}) {

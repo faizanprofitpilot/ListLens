@@ -81,6 +81,19 @@ export async function GET(request: NextRequest) {
             }
 
             console.log('User record created in database:', newUser?.email)
+            
+            // Send welcome email for new users (async, don't wait)
+            if (newUser && !newUser.welcome_email_sent) {
+              fetch(`${requestUrl.origin}/api/email/welcome`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: newUser.id,
+                  email: newUser.email,
+                  firstName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
+                }),
+              }).catch(err => console.error('Failed to send welcome email:', err))
+            }
           } else {
             console.log('User record already exists in database:', existingUser.email)
           }

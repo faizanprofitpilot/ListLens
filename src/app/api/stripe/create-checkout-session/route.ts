@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate plan type
-    if (!['pro', 'turbo'].includes(plan)) {
+    if (!['starter', 'pro', 'team'].includes(plan)) {
       return NextResponse.json(
-        { error: 'Invalid plan type. Must be "pro" or "turbo"' },
+        { error: 'Invalid plan type. Must be "starter", "pro", or "team"' },
         { status: 400 }
       )
     }
@@ -64,9 +64,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the correct price ID based on plan
-    const priceId = plan === 'pro' 
-      ? process.env.STRIPE_PRO_PRICE_ID
-      : process.env.STRIPE_TURBO_PRICE_ID
+    let priceId: string | undefined
+    if (plan === 'starter') {
+      priceId = process.env.STRIPE_STARTER_PRICE_ID
+    } else if (plan === 'pro') {
+      priceId = process.env.STRIPE_PRO_PRICE_ID
+    } else if (plan === 'team') {
+      priceId = process.env.STRIPE_TEAM_PRICE_ID
+    }
 
     if (!priceId) {
       return NextResponse.json({ error: 'Pricing configuration error' }, { status: 500 })

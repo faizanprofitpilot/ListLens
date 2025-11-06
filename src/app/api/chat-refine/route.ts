@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Check if monthly reset is needed for Pro/Turbo users
+    // Check if monthly reset is needed for paid plan users
     const now = new Date()
     const lastReset = new Date(userData.last_reset_date || now.toISOString())
     const needsReset = userData.plan !== 'free' && 
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate usage and quota based on plan
     const plan = userData.plan || 'free'
-    const quota = plan === 'free' ? 5 : plan === 'pro' ? 350 : 2000
+    const quota = plan === 'free' ? 5 : plan === 'starter' ? 50 : plan === 'pro' ? 350 : 2000
     const used = plan === 'free' ? (userData.free_edits_used || 0) : (userData.monthly_edits_used || 0)
     const remaining = Math.max(0, quota - used)
     
@@ -160,9 +160,15 @@ export async function POST(request: NextRequest) {
 
     // Increment usage after successful processing
     const newUsage = used + 1
-    const updateData = plan === 'free' 
-      ? { free_edits_used: newUsage }
-      : { monthly_edits_used: newUsage }
+    const updateData: Record<string, unknown> = {
+      last_activity_at: new Date().toISOString()
+    }
+    
+    if (plan === 'free') {
+      updateData.free_edits_used = newUsage
+    } else {
+      updateData.monthly_edits_used = newUsage
+    }
     
     const { error: updateError } = await supabase
       .from('users')

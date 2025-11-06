@@ -4,7 +4,7 @@ interface UsageData {
   used: number
   quota: number
   remaining: number
-  plan: 'free' | 'pro' | 'turbo'
+  plan: 'free' | 'starter' | 'pro' | 'team'
   resets_at?: string
 }
 
