@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
       welcome: await sendWelcomeEmail({ to: email, firstName: testName }),
       lowCredits: await sendLowCreditsEmail({ 
         to: email, 
-        firstName: testName, 
-        remainingCredits: 2 
+        firstName: testName
       }),
       starterUpsell: await sendStarterUpsellEmail({ 
         to: email, 
