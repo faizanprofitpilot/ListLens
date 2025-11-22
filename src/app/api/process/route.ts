@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Check usage limits before processing
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('free_edits_used, is_pro')
+      .select('free_edits_used, is_pro, plan, email, behavior_email_sent_at')
       .eq('id', user.id)
       .single()
 
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
 
     const used = userData.free_edits_used || 0
     const isPro = userData.is_pro || false
+    const plan = userData.plan || 'free'
     const remaining = isPro ? 999 : Math.max(0, 5 - used)
     
     // Check if user has remaining edits
@@ -111,6 +112,20 @@ export async function POST(request: NextRequest) {
         console.error('Usage increment failed:', updateError)
       } else {
         finalUsage = { used: newUsage, remaining: 5 - newUsage, plan: 'free' }
+        
+        // Send behavior email after first edit (newUsage === 1) if not already sent
+        if (newUsage === 1 && plan === 'free' && !userData.behavior_email_sent_at) {
+          const requestUrl = new URL(request.url)
+          fetch(`${requestUrl.origin}/api/email/behavior`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              email: userData.email,
+              firstName: userData.email?.split('@')[0],
+            }),
+          }).catch(err => console.error('Failed to send behavior email:', err))
+        }
       }
     } else {
       // Update activity for Pro users too

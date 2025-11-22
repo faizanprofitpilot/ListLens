@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { WelcomeEmail, LowCreditsEmail, StarterUpsellEmail } from './templates'
+import { WelcomeEmail, LowCreditsEmail, StarterUpsellEmail, BehaviorEmail, ReactivationEmail } from './templates'
 import React from 'react'
 import { render } from '@react-email/render'
 
@@ -19,10 +19,19 @@ export interface SendWelcomeEmailParams {
 export interface SendLowCreditsEmailParams {
   to: string
   firstName?: string
-  remainingCredits: number
 }
 
 export interface SendStarterUpsellEmailParams {
+  to: string
+  firstName?: string
+}
+
+export interface SendBehaviorEmailParams {
+  to: string
+  firstName?: string
+}
+
+export interface SendReactivationEmailParams {
   to: string
   firstName?: string
 }
@@ -57,7 +66,7 @@ export async function sendWelcomeEmail({ to, firstName }: SendWelcomeEmailParams
   }
 }
 
-export async function sendLowCreditsEmail({ to, firstName, remainingCredits }: SendLowCreditsEmailParams) {
+export async function sendLowCreditsEmail({ to, firstName }: SendLowCreditsEmailParams) {
   if (!resend) {
     console.warn('Resend not configured. Skipping low credits email.')
     return { success: false, error: 'Email service not configured' }
@@ -65,7 +74,7 @@ export async function sendLowCreditsEmail({ to, firstName, remainingCredits }: S
 
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listlens.app'
-    const emailHtml = await render(React.createElement(LowCreditsEmail, { firstName, remainingCredits, ctaUrl: appUrl }))
+    const emailHtml = await render(React.createElement(LowCreditsEmail, { firstName, ctaUrl: appUrl }))
     
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -113,6 +122,66 @@ export async function sendStarterUpsellEmail({ to, firstName }: SendStarterUpsel
     return { success: true, id: data?.id }
   } catch (error) {
     console.error('Error sending starter upsell email:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function sendBehaviorEmail({ to, firstName }: SendBehaviorEmailParams) {
+  if (!resend) {
+    console.warn('Resend not configured. Skipping behavior email.')
+    return { success: false, error: 'Email service not configured' }
+  }
+
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listlens.app'
+    const emailHtml = await render(React.createElement(BehaviorEmail, { firstName, ctaUrl: appUrl }))
+    
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: 'Great start! Keep going with your free edits 🎉',
+      html: emailHtml,
+    })
+
+    if (error) {
+      console.error('Error sending behavior email:', error)
+      return { success: false, error }
+    }
+
+    console.log('Behavior email sent successfully:', data?.id)
+    return { success: true, id: data?.id }
+  } catch (error) {
+    console.error('Error sending behavior email:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function sendReactivationEmail({ to, firstName }: SendReactivationEmailParams) {
+  if (!resend) {
+    console.warn('Resend not configured. Skipping reactivation email.')
+    return { success: false, error: 'Email service not configured' }
+  }
+
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listlens.app'
+    const emailHtml = await render(React.createElement(ReactivationEmail, { firstName, ctaUrl: appUrl }))
+    
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: 'We miss you! Your 5 free edits are waiting 👋',
+      html: emailHtml,
+    })
+
+    if (error) {
+      console.error('Error sending reactivation email:', error)
+      return { success: false, error }
+    }
+
+    console.log('Reactivation email sent successfully:', data?.id)
+    return { success: true, id: data?.id }
+  } catch (error) {
+    console.error('Error sending reactivation email:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }

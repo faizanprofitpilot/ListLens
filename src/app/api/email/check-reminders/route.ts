@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { sendLowCreditsEmail, sendStarterUpsellEmail } from '@/lib/email/service'
+import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail } from '@/lib/email/service'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 export async function POST(request: Request) {
@@ -18,38 +18,67 @@ export async function POST(request: Request) {
     const now = new Date()
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
-    // Get users with low credits (1-2 remaining) who haven't been emailed recently
-    const { data: lowCreditUsers, error: lowCreditError } = await supabase
+    // 1. Day 3 Reactivation: Users with 0-1 edits used, signed up 3 days ago
+    const { data: reactivationUsers, error: reactivationError } = await supabase
       .from('users')
-      .select('id, email, free_edits_used, last_activity_at, low_credits_email_sent_at')
+      .select('id, email, free_edits_used, created_at, reactivation_email_sent_at')
       .eq('plan', 'free')
-      .in('free_edits_used', [3, 4]) // 1 or 2 remaining (out of 5)
-      .is('low_credits_email_sent_at', null) // Haven't been emailed yet
+      .lte('free_edits_used', 1) // 0 or 1 edits used
+      .lt('created_at', threeDaysAgo.toISOString()) // Signed up 3+ days ago
+      .is('reactivation_email_sent_at', null) // Haven't been emailed yet
 
-    if (lowCreditError) {
-      console.error('Error fetching low credit users:', lowCreditError)
-    } else if (lowCreditUsers) {
-      for (const user of lowCreditUsers) {
-        const remaining = 5 - (user.free_edits_used || 0)
-        const isInactive = !user.last_activity_at || new Date(user.last_activity_at) < threeDaysAgo
+    if (reactivationError) {
+      console.error('Error fetching reactivation users:', reactivationError)
+    } else if (reactivationUsers) {
+      for (const user of reactivationUsers) {
+        const createdAt = new Date(user.created_at)
+        const daysSinceSignup = Math.floor((now.getTime() - createdAt.getTime()) / (24 * 60 * 60 * 1000))
         
-        // Send if low credits OR inactive
-        if ((remaining >= 1 && remaining <= 2) || isInactive) {
+        // Send if exactly 3 days since signup (or more)
+        if (daysSinceSignup >= 3) {
           const firstName = user.email?.split('@')[0]
-          const result = await sendLowCreditsEmail({
+          const result = await sendReactivationEmail({
             to: user.email,
             firstName,
-            remainingCredits: remaining,
           })
 
           if (result.success) {
             await supabase
               .from('users')
               .update({ 
-                low_credits_email_sent_at: new Date().toISOString()
+                reactivation_email_sent_at: new Date().toISOString()
               })
               .eq('id', user.id)
           }
+        }
+      }
+    }
+
+    // 2. Low-credits email: Users with 3 edits used (2 remaining) - promote Starter Plan
+    const { data: lowCreditUsers, error: lowCreditError } = await supabase
+      .from('users')
+      .select('id, email, free_edits_used, low_credits_email_sent_at')
+      .eq('plan', 'free')
+      .eq('free_edits_used', 3) // Exactly 3 used = 2 remaining
+      .is('low_credits_email_sent_at', null) // Haven't been emailed yet
+
+    if (lowCreditError) {
+      console.error('Error fetching low credit users:', lowCreditError)
+    } else if (lowCreditUsers) {
+      for (const user of lowCreditUsers) {
+        const firstName = user.email?.split('@')[0]
+        const result = await sendLowCreditsEmail({
+          to: user.email,
+          firstName,
+        })
+
+        if (result.success) {
+          await supabase
+            .from('users')
+            .update({ 
+              low_credits_email_sent_at: new Date().toISOString()
+            })
+            .eq('id', user.id)
         }
       }
     }
@@ -91,6 +120,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true,
+      reactivationEmailsSent: reactivationUsers?.length || 0,
       lowCreditEmailsSent: lowCreditUsers?.length || 0,
       starterUpsellEmailsSent: starterUsers?.length || 0
     })

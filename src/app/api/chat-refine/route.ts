@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Get current user and check usage limits
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('free_edits_used, monthly_edits_used, is_pro, plan, last_reset_date')
+      .select('free_edits_used, monthly_edits_used, is_pro, plan, last_reset_date, email, behavior_email_sent_at')
       .eq('id', user.id)
       .single()
 
@@ -180,6 +180,20 @@ export async function POST(request: NextRequest) {
       // Continue processing even if usage tracking fails
     } else {
       console.log(`Usage incremented for user ${user.id} (${plan}): ${used} -> ${newUsage}`)
+      
+      // Send behavior email after first edit (newUsage === 1) if not already sent
+      if (newUsage === 1 && plan === 'free' && !userData.behavior_email_sent_at) {
+        const requestUrl = new URL(request.url)
+        fetch(`${requestUrl.origin}/api/email/behavior`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            email: userData.email,
+            firstName: userData.email?.split('@')[0],
+          }),
+        }).catch(err => console.error('Failed to send behavior email:', err))
+      }
     }
     
     // Save the processed image
