@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { WelcomeEmail, LowCreditsEmail, StarterUpsellEmail, BehaviorEmail, ReactivationEmail } from './templates'
+import { WelcomeEmail, LowCreditsEmail, StarterUpsellEmail, BehaviorEmail, ReactivationEmail, Day7Email } from './templates'
 import React from 'react'
 import { render } from '@react-email/render'
 
@@ -32,6 +32,11 @@ export interface SendBehaviorEmailParams {
 }
 
 export interface SendReactivationEmailParams {
+  to: string
+  firstName?: string
+}
+
+export interface SendDay7EmailParams {
   to: string
   firstName?: string
 }
@@ -182,6 +187,36 @@ export async function sendReactivationEmail({ to, firstName }: SendReactivationE
     return { success: true, id: data?.id }
   } catch (error) {
     console.error('Error sending reactivation email:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function sendDay7Email({ to, firstName }: SendDay7EmailParams) {
+  if (!resend) {
+    console.warn('Resend not configured. Skipping Day 7 email.')
+    return { success: false, error: 'Email service not configured' }
+  }
+
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listlens.app'
+    const emailHtml = await render(React.createElement(Day7Email, { firstName, ctaUrl: appUrl }))
+    
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: '⏰ Your Free Edits Are Still Waiting!',
+      html: emailHtml,
+    })
+
+    if (error) {
+      console.error('Error sending Day 7 email:', error)
+      return { success: false, error }
+    }
+
+    console.log('Day 7 email sent successfully:', data?.id)
+    return { success: true, id: data?.id }
+  } catch (error) {
+    console.error('Error sending Day 7 email:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }

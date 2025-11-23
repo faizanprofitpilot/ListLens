@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail } from '@/lib/email/service'
+import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail, sendDay7Email } from '@/lib/email/service'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 export async function POST(request: Request) {
@@ -54,7 +54,44 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Low-credits email: Users with 3 edits used (2 remaining) - promote Starter Plan
+    // 2. Day 7 email: Users with 0-1 edits used, signed up 7 days ago, still on free plan
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const { data: day7Users, error: day7Error } = await supabase
+      .from('users')
+      .select('id, email, free_edits_used, created_at, day7_email_sent_at, plan')
+      .eq('plan', 'free') // Still on free plan
+      .lte('free_edits_used', 1) // 0 or 1 edits used
+      .lt('created_at', sevenDaysAgo.toISOString()) // Signed up 7+ days ago
+      .is('day7_email_sent_at', null) // Haven't been emailed yet
+
+    if (day7Error) {
+      console.error('Error fetching Day 7 users:', day7Error)
+    } else if (day7Users) {
+      for (const user of day7Users) {
+        const createdAt = new Date(user.created_at)
+        const daysSinceSignup = Math.floor((now.getTime() - createdAt.getTime()) / (24 * 60 * 60 * 1000))
+        
+        // Send if exactly 7 days since signup (or more)
+        if (daysSinceSignup >= 7) {
+          const firstName = user.email?.split('@')[0]
+          const result = await sendDay7Email({
+            to: user.email,
+            firstName,
+          })
+
+          if (result.success) {
+            await supabase
+              .from('users')
+              .update({ 
+                day7_email_sent_at: new Date().toISOString()
+              })
+              .eq('id', user.id)
+          }
+        }
+      }
+    }
+
+    // 3. Low-credits email: Users with 3 edits used (2 remaining) - promote Starter Plan
     const { data: lowCreditUsers, error: lowCreditError } = await supabase
       .from('users')
       .select('id, email, free_edits_used, low_credits_email_sent_at')
@@ -121,6 +158,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true,
       reactivationEmailsSent: reactivationUsers?.length || 0,
+      day7EmailsSent: day7Users?.length || 0,
       lowCreditEmailsSent: lowCreditUsers?.length || 0,
       starterUpsellEmailsSent: starterUsers?.length || 0
     })

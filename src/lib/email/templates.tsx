@@ -197,6 +197,52 @@ export const ReactivationEmail = ({ firstName, ctaUrl = 'https://listlens.app' }
   </div>
 )
 
+export const Day7Email = ({ firstName, ctaUrl = 'https://listlens.app' }: EmailProps) => (
+  <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: '#f59e0b', padding: '32px', textAlign: 'center', borderRadius: '8px 8px 0 0' }}>
+      <h1 style={{ color: '#ffffff', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>
+        ⏰ Your Free Edits Are Still Waiting!
+      </h1>
+    </div>
+    
+    <div style={{ backgroundColor: '#ffffff', padding: '40px', borderRadius: '0 0 8px 8px', border: '1px solid #e5e7eb', borderTop: 'none' }}>
+      <p style={{ fontSize: '18px', color: '#1f2937', marginTop: 0, lineHeight: '1.6' }}>
+        {firstName ? `Hi ${firstName},` : 'Hi there,'}
+      </p>
+      
+      <p style={{ fontSize: '16px', color: '#4b5563', lineHeight: '1.6' }}>
+        It&apos;s been a week since you signed up for ListLens, and your <strong style={{ color: '#f59e0b' }}>5 free edits</strong> are still waiting for you!
+      </p>
+      
+      <p style={{ fontSize: '16px', color: '#4b5563', lineHeight: '1.6' }}>
+        Don&apos;t miss out on transforming your real estate photos with AI. Upload your first photo and see how professional styling can make your listings stand out.
+      </p>
+      
+      <div style={{ textAlign: 'center', margin: '32px 0' }}>
+        <a
+          href={ctaUrl}
+          style={{
+            display: 'inline-block',
+            backgroundColor: '#f59e0b',
+            color: '#ffffff',
+            padding: '14px 32px',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            fontWeight: '600',
+            fontSize: '16px',
+          }}
+        >
+          Try It Now →
+        </a>
+      </div>
+      
+      <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', marginTop: '32px' }}>
+        Your free edits never expire — use them whenever you&apos;re ready!
+      </p>
+    </div>
+  </div>
+)
+
 export const StarterUpsellEmail = ({ firstName, ctaUrl = 'https://listlens.app' }: EmailProps) => (
   <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
     <div style={{ backgroundColor: '#f59e0b', padding: '32px', textAlign: 'center', borderRadius: '8px 8px 0 0' }}>
