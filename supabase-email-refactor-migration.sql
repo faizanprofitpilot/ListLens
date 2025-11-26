@@ -11,5 +11,5 @@ CREATE INDEX IF NOT EXISTS idx_users_created_at_plan ON public.users(created_at,
 
 -- Add comments
 COMMENT ON COLUMN public.users.behavior_email_sent_at IS 'When behavior-based email was sent (after 1 edit)';
-COMMENT ON COLUMN public.users.reactivation_email_sent_at IS 'When reactivation email was sent (Day 3, 0-1 edits)';
+COMMENT ON COLUMN public.users.reactivation_email_sent_at IS 'When reactivation email was sent (Day 3, free plan)';
 

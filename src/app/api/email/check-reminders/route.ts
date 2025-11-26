@@ -18,12 +18,11 @@ export async function POST(request: Request) {
     const now = new Date()
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
-    // 1. Day 3 Reactivation: Users with 0-1 edits used, signed up 3 days ago
+    // 1. Day 3 Reactivation: Users on free plan, signed up 3 days ago
     const { data: reactivationUsers, error: reactivationError } = await supabase
       .from('users')
-      .select('id, email, free_edits_used, created_at, reactivation_email_sent_at')
+      .select('id, email, created_at, reactivation_email_sent_at')
       .eq('plan', 'free')
-      .lte('free_edits_used', 1) // 0 or 1 edits used
       .lt('created_at', threeDaysAgo.toISOString()) // Signed up 3+ days ago
       .is('reactivation_email_sent_at', null) // Haven't been emailed yet
 
@@ -54,13 +53,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Day 7 email: Users with 0-1 edits used, signed up 7 days ago, still on free plan
+    // 2. Day 7 email: Users on free plan, signed up 7 days ago
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const { data: day7Users, error: day7Error } = await supabase
       .from('users')
-      .select('id, email, free_edits_used, created_at, day7_email_sent_at, plan')
+      .select('id, email, created_at, day7_email_sent_at')
       .eq('plan', 'free') // Still on free plan
-      .lte('free_edits_used', 1) // 0 or 1 edits used
       .lt('created_at', sevenDaysAgo.toISOString()) // Signed up 7+ days ago
       .is('day7_email_sent_at', null) // Haven't been emailed yet
 
