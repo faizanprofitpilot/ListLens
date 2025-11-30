@@ -22,46 +22,46 @@ export async function POST(request: NextRequest) {
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
     // Send all email types with delays to respect rate limits
-    const results: {
-      welcome: Awaited<ReturnType<typeof sendWelcomeEmail>>
-      behavior: Awaited<ReturnType<typeof sendBehaviorEmail>>
-      lowCredits: Awaited<ReturnType<typeof sendLowCreditsEmail>>
-      starterUpsell: Awaited<ReturnType<typeof sendStarterUpsellEmail>>
-      reactivation: Awaited<ReturnType<typeof sendReactivationEmail>>
-      day7: Awaited<ReturnType<typeof sendDay7Email>>
-    } = {
-      welcome: await sendWelcomeEmail({ to: email, firstName: testName }),
-    } as any
+    const welcome = await sendWelcomeEmail({ to: email, firstName: testName })
     await delay(600) // Wait 600ms between requests (safely under 2 req/sec limit)
 
-    results.behavior = await sendBehaviorEmail({
+    const behavior = await sendBehaviorEmail({
       to: email,
       firstName: testName
     })
     await delay(600)
 
-    results.lowCredits = await sendLowCreditsEmail({ 
+    const lowCredits = await sendLowCreditsEmail({ 
       to: email, 
       firstName: testName
     })
     await delay(600)
 
-    results.starterUpsell = await sendStarterUpsellEmail({ 
+    const starterUpsell = await sendStarterUpsellEmail({ 
       to: email, 
       firstName: testName 
     })
     await delay(600)
 
-    results.reactivation = await sendReactivationEmail({
+    const reactivation = await sendReactivationEmail({
       to: email,
       firstName: testName
     })
     await delay(600)
 
-    results.day7 = await sendDay7Email({
+    const day7 = await sendDay7Email({
       to: email,
       firstName: testName
     })
+
+    const results = {
+      welcome,
+      behavior,
+      lowCredits,
+      starterUpsell,
+      reactivation,
+      day7
+    }
 
     return NextResponse.json({
       success: true,
