@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail, sendDay7Email } from '@/lib/email/service'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
-export async function POST(request: Request) {
+// Shared handler function for both GET and POST
+async function handleCheckReminders(request: Request) {
   // Verify cron secret for security (for external cron services)
   // Vercel cron jobs automatically include a vercel-cron header
   const authHeader = request.headers.get('authorization')
@@ -167,5 +168,14 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+// Export both GET and POST handlers
+export async function GET(request: Request) {
+  return handleCheckReminders(request)
+}
+
+export async function POST(request: Request) {
+  return handleCheckReminders(request)
 }
 
