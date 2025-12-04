@@ -52,7 +52,7 @@ async function handleCheckReminders(request: Request) {
       .from('users')
       .select('id, email, created_at, reactivation_email_sent_at')
       .eq('plan', 'free')
-      .lt('created_at', threeDaysAgo.toISOString()) // Signed up 3+ days ago
+      .lte('created_at', threeDaysAgo.toISOString()) // Signed up 3+ days ago
       .is('reactivation_email_sent_at', null) // Haven't been emailed yet
 
     if (reactivationError) {
@@ -107,7 +107,7 @@ async function handleCheckReminders(request: Request) {
       .from('users')
       .select('id, email, created_at, day7_email_sent_at')
       .eq('plan', 'free') // Still on free plan
-      .lt('created_at', sevenDaysAgo.toISOString()) // Signed up 7+ days ago
+      .lte('created_at', sevenDaysAgo.toISOString()) // Signed up 7+ days ago
       .is('day7_email_sent_at', null) // Haven't been emailed yet
 
     if (day7Error) {
