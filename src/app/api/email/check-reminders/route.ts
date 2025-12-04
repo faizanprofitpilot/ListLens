@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail, sendDay7Email } from '@/lib/email/service'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
+// Helper function to add delay (Resend rate limit: 2 requests/second)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Shared handler function for both GET and POST
 async function handleCheckReminders(request: Request) {
   // Verify cron secret for security (for external cron services)
@@ -77,6 +80,9 @@ async function handleCheckReminders(request: Request) {
               firstName,
             })
 
+            // Respect Resend rate limit (2 requests/second)
+            await delay(600)
+
             if (result.success) {
               const updateResult = await supabase
                 .from('users')
@@ -132,6 +138,9 @@ async function handleCheckReminders(request: Request) {
               firstName,
             })
 
+            // Respect Resend rate limit (2 requests/second)
+            await delay(600)
+
             if (result.success) {
               const updateResult = await supabase
                 .from('users')
@@ -176,6 +185,9 @@ async function handleCheckReminders(request: Request) {
           firstName,
         })
 
+        // Respect Resend rate limit (2 requests/second)
+        await delay(600)
+
         if (result.success) {
           await supabase
             .from('users')
@@ -210,6 +222,9 @@ async function handleCheckReminders(request: Request) {
             to: user.email,
             firstName,
           })
+
+          // Respect Resend rate limit (2 requests/second)
+          await delay(600)
 
           if (result.success) {
             await supabase
