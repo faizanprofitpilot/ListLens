@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail, sendDay7Email } from '@/lib/email/service'
-import { createSupabaseServerClient } from '@/lib/supabaseServer'
+import { createSupabaseServiceClient } from '@/lib/supabaseServer'
 
 // Helper function to add delay (Resend rate limit: 2 requests/second)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -36,7 +36,8 @@ async function handleCheckReminders(request: Request) {
   })
 
   try {
-    const supabase = await createSupabaseServerClient()
+    // Use service role client to bypass RLS policies for cron job
+    const supabase = createSupabaseServiceClient()
     const now = new Date()
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
