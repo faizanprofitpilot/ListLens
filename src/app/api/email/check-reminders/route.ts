@@ -2,16 +2,36 @@ import { NextResponse } from 'next/server'
 import { sendLowCreditsEmail, sendStarterUpsellEmail, sendReactivationEmail, sendDay7Email } from '@/lib/email/service'
 import { createSupabaseServiceClient } from '@/lib/supabaseServer'
 
+// CRITICAL: Force dynamic execution to prevent Vercel from caching this route
+// Cron jobs must run fresh on every scheduled execution
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+export const maxDuration = 300 // 5 minutes max duration for cron jobs
+
 // Helper function to add delay (Resend rate limit: 2 requests/second)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 // Shared handler function for both GET and POST
 async function handleCheckReminders(request: Request) {
+  // CRITICAL: Log immediately when route is called - helps debug if Vercel is triggering the cron
+  const timestamp = new Date().toISOString()
+  console.log('[Email Cron] 🔔 Route handler invoked at:', timestamp)
+  console.log('[Email Cron] Request method:', request.method)
+  console.log('[Email Cron] Request URL:', request.url)
+  
   // Verify cron secret for security (for external cron services)
   // Vercel cron jobs have User-Agent: vercel-cron/1.0
   const authHeader = request.headers.get('authorization')
   const vercelCron = request.headers.get('x-vercel-cron')
   const userAgent = request.headers.get('user-agent') || ''
+  
+  // Log all headers for debugging
+  console.log('[Email Cron] Request headers:', {
+    userAgent,
+    hasVercelCronHeader: !!vercelCron,
+    vercelCronValue: vercelCron,
+    hasAuthHeader: !!authHeader,
+  })
   
   // Allow if it's a Vercel cron job (check User-Agent or x-vercel-cron header)
   // OR if authorization header matches
@@ -19,12 +39,14 @@ async function handleCheckReminders(request: Request) {
   const hasValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET}`
   
   if (!isVercelCron && !hasValidAuth) {
-    console.error('[Email Cron] Unauthorized request:', {
+    console.error('[Email Cron] ❌ Unauthorized request:', {
       userAgent,
       hasVercelCronHeader: !!vercelCron,
+      vercelCronValue: vercelCron,
       hasAuthHeader: !!authHeader,
       isVercelCron,
-      hasValidAuth
+      hasValidAuth,
+      allHeaders: Object.fromEntries(request.headers.entries())
     })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -36,8 +58,18 @@ async function handleCheckReminders(request: Request) {
   })
 
   try {
+    // Verify environment variables are available
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is not set')
+    }
+    
     // Use service role client to bypass RLS policies for cron job
     const supabase = createSupabaseServiceClient()
+    
+    if (!supabase) {
+      throw new Error('Failed to create Supabase service client')
+    }
+    
     const now = new Date()
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
